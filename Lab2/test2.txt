@@ -1,0 +1,8 @@
+addiu 4, 0, 0
+addiu 5, 0, 0xA
+addiu 6, 0, 0
+addiu 4, 4, 0x1
+addiu 6, 6, 0x1
+bne 5, 6, -8
+addiu 2, 0, 0xA
+syscall

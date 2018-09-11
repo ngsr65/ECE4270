@@ -1,0 +1,18 @@
+addiu 2, 0, 10
+addiu 5, 0, 1
+j 16
+addiu 10, 10, 3840
+ori 0, 0, 0
+addiu 5, 0, 100
+syscall
+bne 0, 0, 7
+ori 0, 0, 0
+addiu 6, 0, 4919
+beq 0, 0, 6
+ori 0, 0, 0
+addiu 7, 0, 839
+syscall
+addiu 8, 0 839
+syscall
+addiu 7, 0, 13
+syscall
