@@ -434,11 +434,15 @@ void handle_instruction()
 		//SUBU/LW
 		case 35:
 			if (flag == 0){//LW
-				temp = mem_read_32( rs + immed );
-				NEXT_STATE.REGS[ rt ] = temp;
+				temp = immed;
+                if( temp >> 15 == 1 ){
+                    temp = temp | 0xffff0000;
+                }
+                temp2 = mem_read_32( CURRENT_STATE.REGS[ rs ] + temp );
+                NEXT_STATE.REGS[ rt ] = temp2;
 			} else {//SUBU
-				temp = rs;
-				temp2 = rt;
+				temp = CURRENT_STATE.REGS[ rs ];
+				temp2 = CURRENT_STATE.REGS[rt];
 				temp3 = temp - temp2;
 				NEXT_STATE.REGS[rd] = temp3;
 			}			
@@ -646,8 +650,8 @@ void handle_instruction()
 			if (temp >> 15 == 1){
 				temp = temp | 0xFFFF0000;
 			}
-			temp2 = CURRENT_STATE.REGS[28] + temp;
-			if ((temp2 && 0x00000003) == 0){
+			temp2 = CURRENT_STATE.REGS[rs] + temp;
+			if ((temp2 & 0x00000003) == 0){
 				mem_write_32(temp2, CURRENT_STATE.REGS[rt]);	
 			} else {
 				//Exception	
