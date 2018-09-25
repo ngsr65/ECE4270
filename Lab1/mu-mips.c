@@ -706,6 +706,7 @@ void handle_instruction()
 			if (CURRENT_STATE.REGS[rt] == CURRENT_STATE.REGS[rs]){ //COMPARISON
 				if ((immed & 0x20000) != 0){ // NEGATIVE SIGN BIT
 					temp = (immed | 0xFFFC0000);
+					printf("oops, negative num\n");
 				}
 				else{	//POSITIVE SIGN BIT
 					temp = immed;
@@ -731,7 +732,7 @@ void handle_instruction()
 			break;
 		//BLEZ
 		case 6:
-			if ((CURRENT_STATE.REGS[rs] & 0x80000000) > 0){ //COMPARISON
+			if ( ( (CURRENT_STATE.REGS[rs] & 0x80000000) > 0) || (CURRENT_STATE.REGS[rs] == 0) ){ //COMPARISON
 				if ((immed & 0x20000) != 0){ // NEGATIVE SIGN BIT
 					temp = (immed | 0xFFFC0000);
 				}
