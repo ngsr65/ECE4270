@@ -923,9 +923,9 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				OFFSET = GET_REGISTER_NUM(ARGUMENT3);
+				OFFSET = (uint16_t)strtol(ARGUMENT3, NULL, 16);
 				printf("BEQ RS= %x\n", RS);
-				fprintf(Output, "%08x\n", (0x00000011 | RS | RT | OFFSET));
+				fprintf(Output, "%08x\n", (0x10000000 | RS | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
   		}
@@ -973,7 +973,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				OFFSET = (*ARGUMENT2 & 0x0000FFFF);
+				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
 				printf("BLEZ RS= %x OFFSET= %x\n", RS, OFFSET);
 				fprintf(Output, "%08x\n", (0x18000000 | RS | OFFSET));
     			TEMPbuffer = NULL;
@@ -1055,7 +1055,7 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT1);
     			i++;
     		} else {
-				TARGET = *ARGUMENT1;
+				TARGET = (uint16_t)strtol(ARGUMENT1, NULL, 16);
 				printf("J TARGET= %lx\n", TARGET);
 				fprintf(Output, "%08lx\n", (0x08000000 | TARGET));
     			TEMPbuffer = NULL;
@@ -1124,6 +1124,7 @@ int main(int argc, char *argv[]) {
   		}
 	}
 	else if (strcmp(TempOpCode, "syscall") == 0){
+		printf("SYSCALL\n");
 		fprintf(Output, "%08x\n", (0x0000000C));
 	}
 	else {

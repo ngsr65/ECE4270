@@ -608,8 +608,7 @@ void handle_instruction()
 		case 2:
 			if (flag == 0){//J
 				temp = instr & 0x3FFFFFF;
-				temp = temp << 2;
-				temp2 = (NEXT_STATE.PC + 4) & 0xF0000000;
+				temp2 = (NEXT_STATE.PC + 4) & 0xFFF00000;
 				temp = temp2 | temp;
 				NEXT_STATE.PC = temp;
 			} else {	//SRL
@@ -623,8 +622,7 @@ void handle_instruction()
 		case 3:
 			if (flag == 0){//JAL
 				temp = instr & 0x3FFFFFF;
-				temp = temp << 2;
-				temp2 = (NEXT_STATE.PC + 4) & 0xF0000000;
+				temp2 = (NEXT_STATE.PC + 4) & 0xFFF00000;
 				temp = temp2 | temp;
 				NEXT_STATE.REGS[31] = NEXT_STATE.PC + 8;
 				NEXT_STATE.PC = temp;
@@ -704,65 +702,73 @@ void handle_instruction()
 			break;
 		//BEQ
 		case 4:
-			if ((mem_read_32(rt)) == (mem_read_32(rs))){ //COMPARISON
-				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
-					temp = ((immed << 2) | 0xFFFC0000);
+			if (CURRENT_STATE.REGS[rt] == CURRENT_STATE.REGS[rs]){ //COMPARISON
+				if ((immed & 0x20000) != 0){ // NEGATIVE SIGN BIT
+					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
-					temp = ((immed << 2) & 0xFFFC0000);
+					temp = immed;
 				}
-			NEXT_STATE.PC = ((CURRENT_STATE.PC + 4) + temp);	//DELAY SLOT + TARGET
+				NEXT_STATE.PC = (CURRENT_STATE.PC + temp);	//DELAY SLOT + TARGET
+			} else {
+				NEXT_STATE.PC += 4;
 			}
 			break;
 		//BNE
 		case 5:
-			if ((mem_read_32(rt)) != (mem_read_32(rs))){ //COMPARISON
+			if (CURRENT_STATE.REGS[rt] != CURRENT_STATE.REGS[rs]){ //COMPARISON
 				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
-					temp = ((immed << 2) | 0xFFFC0000);
+					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
-					temp = ((immed << 2) & 0xFFFC0000);
+					temp = immed;
 				}
-			NEXT_STATE.PC = ((CURRENT_STATE.PC + 4) + temp);	//DELAY SLOT + TARGET
+			NEXT_STATE.PC = (CURRENT_STATE.PC + temp);	//DELAY SLOT + TARGET
+			} else {
+				NEXT_STATE.PC += 4;
 			}
 			break;
 		//BLEZ
 		case 6:
-			if ((mem_read_32(rs) & 0x40000000 == 0) && (mem_read_32(rs) <= 0)){ //COMPARISON
+			if ((CURRENT_STATE.REGS[rs] & 0x80000000) > 0){ //COMPARISON
 				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
-					temp = ((immed << 2) | 0xFFFC0000);
+					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
-					temp = ((immed << 2) & 0xFFFC0000);
+					temp = immed;
 				}
-			NEXT_STATE.PC = ((CURRENT_STATE.PC + 4) + temp);	//DELAY SLOT + TARGET
+			NEXT_STATE.PC = (CURRENT_STATE.PC + temp);	//DELAY SLOT + TARGET
+			} else {
+				NEXT_STATE.PC += 4;
 			}
 			break;
 		//BGEZ
 		case 1:
 			if ((mem_read_32(rs) & 0x40000000 == 0) && (mem_read_32(rs) >= 0)){ //COMPARISON
 				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
-					temp = ((immed << 2) | 0xFFFC0000);
+					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
-					temp = ((immed << 2) & 0xFFFC0000);
+					temp = immed;
 				}
-			NEXT_STATE.PC = ((CURRENT_STATE.PC + 4) + temp);	//DELAY SLOT + TARGET
+			NEXT_STATE.PC = (CURRENT_STATE.PC + temp);	//DELAY SLOT + TARGET
+			} else {
+				NEXT_STATE.PC += 4;
 			}
-			
 			break;
 		//BGTZ
 		case 7:
 			if ((mem_read_32(rs) & 0x40000000 == 0) && (mem_read_32(rs) > 0)){ //COMPARISON
 				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
-					temp = ((immed << 2) | 0xFFFC0000);
+					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
-					temp = ((immed << 2) & 0xFFFC0000);
+					temp = immed;
 				}
-			NEXT_STATE.PC = ((CURRENT_STATE.PC + 4) + temp);	//DELAY SLOT + TARGET
+			NEXT_STATE.PC = (CURRENT_STATE.PC + temp);	//DELAY SLOT + TARGET
+			} else {
+				NEXT_STATE.PC += 4;
 			}
-			
 			break;
 
 		default: 
