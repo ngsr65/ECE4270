@@ -351,6 +351,25 @@ void EX()
 void ID()
 {
 	/*IMPLEMENT THIS*/
+   uint8_t opCode = 0x0, rs, rt, rd;
+
+    opCode = ( ID_IF.IR >> 26 ); //get bits 31-26 for the opCode
+    rs = ( ID_IF.IR >> 21 );     //get the value of RS register 
+    rt = ( ID_IF.IR >> 16 );     //get the value of RT register 
+    rd = ( ID_IF.IR >> 11 );     //get the value of RD register 
+
+    IF_EX.A = REGS[ rs ];
+    IF_EX.B = REGS[ rt ];
+    IF_EX.imm = IR;
+
+    if( (0x01 & ( ID_IF.IR >> 16 ) ) == 1 ){
+        //need to sign extend negative
+        IF_EX.imm = IF_EX.imm | 0xFFFF0000;
+    } else {
+        //positive 
+        IF_EX.imm = IF_EX.imm & 0x0000FFFF;
+    }
+
 }
 
 /************************************************************/
@@ -359,6 +378,9 @@ void ID()
 void IF()
 {
 	/*IMPLEMENT THIS*/
+    ID_IF.IR = mem_read_32( ID_IF.PC );
+    ID_IF.PC += 4;
+
 }
 
 
