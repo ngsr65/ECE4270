@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     			RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("ADD RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nADD RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000020 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     			RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("ADDU RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nADDU RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000021 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("ADDI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
-				fprintf(Output, "%08lx\n", (0x10000000 | RS | RT | IMMEDIATE));
+				printf("\nADDI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				fprintf(Output, "%08lx\n", (0x20000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
   		}
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("ADDIU RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				printf("\nADDIU RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
 				fprintf(Output, "%08lx\n", (0x24000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SUB RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nSUB RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000022 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SUBU RS= %x RT= %x RD= %x\n", RS, RT, RD);
+				printf("\nSUBU RS= %x RT= %x RD= %x\n", RS, RT, RD);
 				fprintf(Output, "%08x\n", (0x00000023 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				printf("MULT RS= %x RT= %x\n", RS, RT);
+				printf("\nMULT RS= %x RT= %x\n", RS, RT);
 				fprintf(Output, "%08x\n", (0x00000018 | RS | RT));
     			TEMPbuffer = NULL;
     		}		
@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				printf("MULTU RS= %x RT= %x\n", RS, RT);
+				printf("\nMULTU RS= %x RT= %x\n", RS, RT);
 				fprintf(Output, "%08x\n", (0x00000019 | RS | RT));
     			TEMPbuffer = NULL;
     		}		
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				printf("DIV RS= %x RT= %x\n", RS, RT);
+				printf("\nDIV RS= %x RT= %x\n", RS, RT);
 				fprintf(Output, "%08x\n", (0x0000001A | RS | RT));
     			TEMPbuffer = NULL;
     		}		
@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				printf("DIVU RS= %x RT= %x\n", RS, RT);
+				printf("\nDIVU RS= %x RT= %x\n", RS, RT);
 				fprintf(Output, "%08x\n", (0x0000001B | RS | RT));
     			TEMPbuffer = NULL;
     		}		
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("AND RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nAND RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000024 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -362,8 +362,8 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("ADDI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
-				fprintf(Output, "%08lx\n", (0x18000000 | RS | RT | IMMEDIATE));
+				printf("\nADDI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				fprintf(Output, "%08lx\n", (0x30000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
   		}
@@ -390,7 +390,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("OR RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nOR RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000025 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -418,7 +418,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("ORI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				printf("\nORI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
 				fprintf(Output, "%08lx\n", (0x1A000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("XOR RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nXOR RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000026 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -474,7 +474,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("XORI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				printf("\nXORI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
 				fprintf(Output, "%08lx\n", (0x1C000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
@@ -502,7 +502,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("NOR RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nNOR RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x00000027 | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -530,7 +530,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT3) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SLT RD= %x RS= %x RT= %x\n", RD, RS, RT);
+				printf("\nSLT RD= %x RS= %x RT= %x\n", RD, RS, RT);
 				fprintf(Output, "%08x\n", (0x0000002A | RS | RT | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -558,7 +558,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				IMMEDIATE = (unsigned long)strtol(ARGUMENT3, NULL, 16);
-				printf("SLTI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
+				printf("\nSLTI RS= %x RT= %x IMMEDIATE= %lx\n", RS, RT, IMMEDIATE);
 				fprintf(Output, "%08lx\n", (0x14000000 | RS | RT | IMMEDIATE));
     			TEMPbuffer = NULL;
     		}		
@@ -586,7 +586,7 @@ int main(int argc, char *argv[]) {
 				SA = (unsigned int)strtol(ARGUMENT3, NULL, 16) << 6;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SLL RD= %x RT= %x SA= %x\n", RD, RT, SA);
+				printf("\nSLL RD= %x RT= %x SA= %x\n", RD, RT, SA);
 				fprintf(Output, "%08x\n", (0x00000000 | RT | RD | SA));
     			TEMPbuffer = NULL;
     		}		
@@ -614,7 +614,7 @@ int main(int argc, char *argv[]) {
 				SA = (unsigned int)strtol(ARGUMENT3, NULL, 16) << 6;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SRL RD= %x RT= %x SA= %x\n", RD, RT, SA);
+				printf("\nSRL RD= %x RT= %x SA= %x\n", RD, RT, SA);
 				fprintf(Output, "%08x\n", (0x00000002 | RT | RD | SA));
     			TEMPbuffer = NULL;
     		}		
@@ -642,7 +642,7 @@ int main(int argc, char *argv[]) {
 				SA = (unsigned int)strtol(ARGUMENT3, NULL, 16) << 6;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("SRA RD= %x RT= %x SA= %x\n", RD, RT, SA);
+				printf("\nSRA RD= %x RT= %x SA= %x\n", RD, RT, SA);
 				fprintf(Output, "%08x\n", (0x00000003 | RT | RD | SA));
     			TEMPbuffer = NULL;
     		}		
@@ -670,7 +670,7 @@ int main(int argc, char *argv[]) {
 				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("LW BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				printf("\nLW BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0x8C000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -695,10 +695,10 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT3);
     			i++;
     		} else {
-				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
+				BASE = (unsigned int)strtol(ARGUMENT3, NULL, 16) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("LB BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				printf("\nLB BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0x80000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -723,10 +723,10 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT3);
     			i++;
     		} else {
-				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
+				BASE = (unsigned int)strtol(ARGUMENT3, NULL, 16) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("LH BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				printf("\nLH BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0x84000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -748,7 +748,7 @@ int main(int argc, char *argv[]) {
     		} else {
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("LUI RT= %x OFFSET= %x\n", RT, OFFSET);
+				printf("\nLUI RT= %x OFFSET= %x\n", RT, OFFSET);
 				fprintf(Output, "%08x\n", (0x3C000000 | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -773,10 +773,11 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT3);
     			i++;
     		} else {
-				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
+    			BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
-				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("SW BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				//OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
+				OFFSET = (uint16_t)GET_REGISTER_NUM(ARGUMENT2);
+				printf("\nSW BASE= %x RT= %x OFFSET= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0xAC000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -804,7 +805,7 @@ int main(int argc, char *argv[]) {
 				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("SB BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				printf("\nSB BASE= %x RT= %x OFFSET= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0xA0000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -832,7 +833,7 @@ int main(int argc, char *argv[]) {
 				BASE = GET_REGISTER_NUM(ARGUMENT3) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT1) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("SH BASE= %x RT= %x IMMEDIATE= %x\n", BASE, RT, OFFSET);
+				printf("\nSH BASE= %x RT= %x OFFSET= %x\n", BASE, RT, OFFSET);
 				fprintf(Output, "%08x\n", (0xA4000000 | BASE | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -848,7 +849,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("MFHI RD= %x\n", RD);
+				printf("\nMFHI RD= %x\n", RD);
 				fprintf(Output, "%08x\n", (0x00000010 | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -864,7 +865,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
-				printf("MFLO RD= %x\n", RD);
+				printf("\nMFLO RD= %x\n", RD);
 				fprintf(Output, "%08x\n", (0x00000012 | RD));
     			TEMPbuffer = NULL;
     		}		
@@ -880,7 +881,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				printf("MTHI RS= %x\n", RS);
+				printf("\nMTHI RS= %x\n", RS);
 				fprintf(Output, "%08x\n", (0x00000011 | RS));
     			TEMPbuffer = NULL;
     		}		
@@ -896,7 +897,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				printf("MTLO RS= %x\n", RS);
+				printf("\nMTLO RS= %x\n", RS);
 				fprintf(Output, "%08x\n", (0x00000013 | RS));
     			TEMPbuffer = NULL;
     		}		
@@ -924,7 +925,7 @@ int main(int argc, char *argv[]) {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
 				OFFSET = (uint16_t)strtol(ARGUMENT3, NULL, 16);
-				printf("BEQ RS= %x\n", RS);
+				printf("\nBEQ RS= %x\n", RS);
 				fprintf(Output, "%08x\n", (0x10000000 | RS | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -951,9 +952,9 @@ int main(int argc, char *argv[]) {
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
 				RT = GET_REGISTER_NUM(ARGUMENT2) << 16;
-				OFFSET = (uint16_t)strtol(ARGUMENT3, NULL, 16) >> 2;
-				printf("BNE RS= %x RT= %x OFFSET= %x\n", RS, RT, OFFSET);
-				fprintf(Output, "%08x\n", (0x1400c000 | RS | RT | OFFSET));
+				OFFSET = (uint16_t)strtol(ARGUMENT3, NULL, 16);
+				printf("\nBNE RS= %x RT= %x OFFSET= %x\n", RS, RT, OFFSET);
+				fprintf(Output, "%08x\n", (0x14000000 | RS | RT | OFFSET));
     			TEMPbuffer = NULL;
     		}		
   		}
@@ -973,8 +974,9 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
+				//OFFSET = (*ARGUMENT2 & 0x0000FFFF);
 				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
-				printf("BLEZ RS= %x OFFSET= %x\n", RS, OFFSET);
+				printf("\nBLEZ RS= %x OFFSET= %x\n", RS, OFFSET);
 				fprintf(Output, "%08x\n", (0x18000000 | RS | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -995,8 +997,9 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				OFFSET = (*ARGUMENT2 & 0x0000FFFF);
-				printf("BLTZ RS= %x OFFSET= %x\n", RS, OFFSET);
+				//OFFSET = (*ARGUMENT2 & 0x0000FFFF);
+				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
+				printf("\nBLTZ RS= %x OFFSET= %x\n", RS, OFFSET);
 				fprintf(Output, "%08x\n", (0x04000000 | RS | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -1017,8 +1020,9 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				OFFSET = (*ARGUMENT2 & 0x0000FFFF);
-				printf("BGEZ RS= %x OFFSET= %x\n", RS, OFFSET);
+				//OFFSET = (*ARGUMENT2 & 0x0000FFFF);
+				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
+				printf("\nBGEZ RS= %x OFFSET= %x\n", RS, OFFSET);
 				fprintf(Output, "%08x\n", (0x04010000 | RS | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -1039,8 +1043,9 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				OFFSET = (*ARGUMENT2 & 0x0000FFFF);
-				printf("BGTZ RS= %x OFFSET= %x\n", RS, OFFSET);
+				//OFFSET = (*ARGUMENT2 & 0x0000FFFF);
+				OFFSET = (uint16_t)strtol(ARGUMENT2, NULL, 16);
+				printf("\nBGTZ RS= %x OFFSET= %x\n", RS, OFFSET);
 				fprintf(Output, "%08x\n", (0x1C000000 | RS | OFFSET));
     			TEMPbuffer = NULL;
     		}		
@@ -1055,8 +1060,8 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT1);
     			i++;
     		} else {
-				TARGET = (uint16_t)strtol(ARGUMENT1, NULL, 16);
-				printf("J TARGET= %lx\n", TARGET);
+				TARGET = (unsigned long)strtol(ARGUMENT1, NULL, 16);
+				printf("\nJ TARGET= %lx\n", TARGET);
 				fprintf(Output, "%08lx\n", (0x08000000 | TARGET));
     			TEMPbuffer = NULL;
     		}		
@@ -1072,7 +1077,7 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				printf("JR RS= %x\n", RS);
+				printf("\nJR RS= %x\n", RS);
 				fprintf(Output, "%08x\n", (0x00000008|RS)&(0x03E0003F)); //this and ensures the special and empty values stay 0
     			TEMPbuffer = NULL;
     		}		
@@ -1087,8 +1092,9 @@ int main(int argc, char *argv[]) {
     			printf ("%s ", ARGUMENT1);
     			i++;
     		} else {
-				TARGET = (*ARGUMENT1 & 0x0000FFFF);
-				printf("JAL TARGET= %lx\n", TARGET);
+				//TARGET = (*ARGUMENT1 & 0x0000FFFF);
+				TARGET = (unsigned long)strtol(ARGUMENT1, NULL, 16);
+				printf("\nJAL TARGET= %lx\n", TARGET);
 				fprintf(Output, "%08lx\n", (0x0c000000 | TARGET));
     			TEMPbuffer = NULL;
     		}		
@@ -1109,23 +1115,31 @@ int main(int argc, char *argv[]) {
     			i++;
     		} else {
 				RS = GET_REGISTER_NUM(ARGUMENT1) << 21;
-				RD = 31 << 11;
-				printf("JALR RD= %x, RS= %x\n", RD, RS);
-				fprintf(Output, "%08x\n", (0x00000009 | RS | RD));
+				RD = GET_REGISTER_NUM(ARGUMENT2) << 11;
+				if (RD == 0){
+					printf("\nJALR RS= %x\n", RS);
+					fprintf(Output, "%08x\n", (0x00000009 | RS));
+				} else {
+					RS = GET_REGISTER_NUM(ARGUMENT2) << 21;
+					RD = GET_REGISTER_NUM(ARGUMENT1) << 11;
+					printf("\nJALR RD= %x, RS= %x\n", RD, RS);
+					fprintf(Output, "%08x\n", (0x00000009 | RS | RD));
+				}
     			TEMPbuffer = NULL;
     		}
   		}
 	}
-	else if (strcmp(TempOpCode, "syscall") == 0){
-		printf("SYSCALL\n");
+	else if (strcmp(TempOpCode, "SYSCALL") == 0){
+		printf("Syscall");
 		fprintf(Output, "%08x\n", (0x0000000C));
+
 	}
 	else {
 		TEMPbuffer = NULL;
 	}
 
 	}
-
+	fprintf(Output, "%08x\n", (0x0000000C));
     fclose(fp);
     fclose(Output);
     free(buffer);
@@ -1199,6 +1213,6 @@ int GET_REGISTER_NUM(char* ARG){
 	else if (strcmp(ARG, "ra") == 0)
 		return 31;
 	else
-		return 40;
+		return ((int)strtol(ARG, NULL, 16));
 }
 

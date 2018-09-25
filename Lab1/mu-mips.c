@@ -390,7 +390,7 @@ void handle_instruction()
 			if (flag == 1){//JALR
 				temp = CURRENT_STATE.REGS[rs];
 				if ( ((temp && 0x00000003) == 0) && (temp != CURRENT_STATE.REGS[rd]) ){
-					NEXT_STATE.PC += temp;
+					NEXT_STATE.PC = (NEXT_STATE.PC & 0xFFF00000) | temp;
 					if ((CURRENT_STATE.REGS[rd]) == 0){
 						NEXT_STATE.REGS[31] = NEXT_STATE.PC;	
 					} else {
@@ -610,7 +610,7 @@ void handle_instruction()
 				temp = instr & 0x3FFFFFF;
 				temp2 = (NEXT_STATE.PC + 4) & 0xFFF00000;
 				temp = temp2 | temp;
-				NEXT_STATE.PC = temp;
+				NEXT_STATE.PC = (NEXT_STATE.PC & 0xFFF00000) | (instr & 0x03FFFFFF);
 			} else {	//SRL
 				temp = CURRENT_STATE.REGS[rt];
 				temp2 = temp >> sa;
@@ -650,7 +650,8 @@ void handle_instruction()
 			}
 			temp2 = CURRENT_STATE.REGS[rs] + temp;
 			if ((temp2 & 0x00000003) == 0){
-				mem_write_32(temp2, CURRENT_STATE.REGS[rt]);	
+				mem_write_32(temp2, CURRENT_STATE.REGS[rt]);
+				printf("Wrote %d to address %x\n", CURRENT_STATE.REGS[rt], temp2);
 			} else {
 				//Exception	
 			}
@@ -731,7 +732,7 @@ void handle_instruction()
 		//BLEZ
 		case 6:
 			if ((CURRENT_STATE.REGS[rs] & 0x80000000) > 0){ //COMPARISON
-				if (((immed << 2) & 0x20000) != 0){ // NEGATIVE SIGN BIT
+				if ((immed & 0x20000) != 0){ // NEGATIVE SIGN BIT
 					temp = (immed | 0xFFFC0000);
 				}
 				else{	//POSITIVE SIGN BIT
