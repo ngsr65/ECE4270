@@ -102,4 +102,4 @@ void IF();/*IMPLEMENT THIS*/
 void show_pipeline();/*IMPLEMENT THIS*/
 void initialize();
 void print_program(); /*IMPLEMENT THIS*/
-
+int checkOverflow(uint32_t num1, uint32_t num2);
