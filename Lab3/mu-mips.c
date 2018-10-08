@@ -443,12 +443,12 @@ void EX()
                     printf( "Overflow\n" );
                 }
             } else { //JR
-
+			EX_MEM.ALUOutput = IF_EX.IR >> 21;
             }
             break;
         case 9:     //JALR
             if( flag == 1 ){
-
+				EX_MEM.ALUOutput = IF_EX.IR >> 21;
             } else { //ADDIU
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 if( checkOverflow( IF_EX.A, IF_EX.imm ) == 1 ){
@@ -539,46 +539,68 @@ void EX()
             break;
         case 42:
             //SLT
+			if( IF_EX.A < IF_EX.B ){
+				EX_MEM.ALUOutput = 1;
+			} else {
+				EX_MEM.ALUOutput = 0;
+			}
             break;
         case 10: 
             //SLTI
-            break;
+            if( IF_EX.A < IF_EX.imm ){
+                 EX_MEM.ALUOutput = 1;
+             } else {
+                 EX_MEM.ALUOutput = 0;
+             }
+			
+			break;
         case 0: 
             if( flag == 2 ){ //BLTZ
+				if( IF_EX.A < 0 ){
+                 EX_MEM.ALUOutput = IF_EX.imm;
+              }		
 
             } else { //SLL
-
+				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
             }
             break;
         case 2: 
             if( flag == 0 ){ //J
-
+			EX_MEM.ALUOutput = IF_EX.IR & 0x03FFFFFF;
             } else { //SRL
-
+				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
             }
             break;
         case 3: 
             if( flag == 0 ){ //JAL
-
+			EX_MEM.ALUOutput = IF_EX.IR & 0x03FFFFFF;
             } else { //SRA
-
+				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
             }
             break;
         case 15:
             //LUI
-            break;
+            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
+			EX_MEM.B = IF_EX.B;
+			break;
         case 43:    
             //SW
-            break;
+            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
+			EX_MEM.B = IF_EX.B;
+			break;
         case 40:
             //SB
-            break;
+            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
+			EX_MEM.B = IF_EX.B;
+			break;
         case 41:
             //SH
-            break;
-        case 16:
+            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
+			EX_MEM.B = IF_EX.B;
+			break;
+      /*  case 16:
             //MFHI
-			EX_MEM.ALUOutput = 
+			//EX_MEM.ALUOutput = 
             break;
         case 18:
             //MFLO
@@ -588,21 +610,36 @@ void EX()
             break;
         case 19:
             //MTLO
-            break;
+            break;  */
         case 4:
             //BEQ
-            break;
+            if( IF_EX.A == IF_EX.B ){
+				EX_MEM.ALUOutput = IF_EX.imm;
+			}
+			break;
         case 5:
             //BNE
+			if( IF_EX.A != IF_EX.B ){
+                EX_MEM.ALUOutput = IF_EX.imm;
+             }
             break;
         case 6: 
             //BLEZ
-            break;
+            if( IF_EX.A <= 0 ){
+                 EX_MEM.ALUOutput = IF_EX.imm;
+              }
+			break;
         case 1:
             //BGEZ
+			if( IF_EX.A >= 0 ){
+                 EX_MEM.ALUOutput = IF_EX.imm;
+              }
             break;
         case 7:
             //BGTZ
+			if( IF_EX.A > 0 ){
+                 EX_MEM.ALUOutput = IF_EX.imm;
+              }
             break;
         default:
             printf( "\nNot a Valid OpCode: %x", opCode );
