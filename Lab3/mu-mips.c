@@ -326,7 +326,7 @@ void handle_pipeline()
 /************************************************************/
 void WB()
 {
-    /*IMPLEMENT THIS*/
+    
 }
 
 /************************************************************/
@@ -334,7 +334,69 @@ void WB()
 /************************************************************/
 void MEM()
 {
-    /*IMPLEMENT THIS*/
+    uint8_t opCode = ( IF_EX.IR >> 26 ) & 0x3f;
+    uint8_t flag = 0;
+
+    //if the instruction in special
+    if( opCode == 0 ){
+        opCode = IF_EX.IR & 63;
+        flag = 1;
+    }
+    else if( opCode == 1 ){
+        opCode = ( IF_EX.IR >> 16 ) & 31;
+        flag = 2;
+    }
+	
+	//Store
+	//SW
+	if (opCode == 43){
+		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+	}
+	//SB
+	if (opCode == 40){
+		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+	}
+	//SH
+	if (opCode == 41){
+		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+	}
+	/*//MTLO		I think these belong in WB. They're classified as
+				  //Load/Store in Lab1, but it's register to register
+	if (opCode == 19){
+		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+	}
+	//MTHI
+	if (opCode == 17){
+		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+	}
+	*/
+	
+	//Load
+	//LB
+	if (opCode == 32 && flag == 0){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	//LH
+	if (opCode == 33 && flag == 0){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	//LW
+	if (opCode == 35 && flag == 0){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	//LUI
+	if (opCode == 15){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	/*//MFLO
+	if (opCode == 18){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	//MFHI
+	if (opCode == 16){
+		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+	}
+	*/
 }
 
 /************************************************************/
@@ -422,7 +484,7 @@ void EX()
         case 24:
             //MULT
             EX_MEM.ALUOutput = IF_EX.A * IF_EX.B;
-            //should high and lo regs be used? 
+            //should high and lo regs be used? Yes
             break;
         case 25: 
             //multu
@@ -516,12 +578,13 @@ void EX()
             break;
         case 16:
             //MFHI
+			EX_MEM.ALUOutput = 
             break;
         case 18:
             //MFLO
             break;
         case 17: 
-            //MFHI
+            //MTHI
             break;
         case 19:
             //MTLO
@@ -553,7 +616,6 @@ void EX()
 /************************************************************/
 void ID()
 {
-    /*IMPLEMENT THIS*/
     uint8_t opCode = 0x0, rs, rt, rd;
 
     opCode = ( ID_IF.IR >> 26 ) & 0x3f;        //get bits 31-26 for the opCode
@@ -581,7 +643,6 @@ void ID()
 /************************************************************/
 void IF()
 {
-    /*IMPLEMENT THIS*/
     ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
     ID_IF.PC += 4;
 
