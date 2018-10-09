@@ -347,7 +347,7 @@ void WB()
         //ADD && LB
         case 32:
             if (flag == 0){ //LB
-                
+                NEXT_STATE.REGS[rt] = MEM_WB.LMD;
             } else {    //Add
                 NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
             }
@@ -371,7 +371,7 @@ void WB()
         case 33:
             //LH
             if( flag == 0 ){
-
+		NEXT_STATE.REGS[rt] = MEM_WB.LMD;
             } else { //ADDU
                 NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
             }
@@ -379,11 +379,11 @@ void WB()
         case 34:
             //SUB
             NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
-            break;
+            break;NEXT_STATE.REGS[rd] = MEM_WB.LMD;
         case 35:
             if( flag == 0 ){
                 //LW
-                
+                NEXT_STATE.REGS[rt] = MEM_WB.LMD;
             } else { //SUBU
                 NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
             }
@@ -527,11 +527,10 @@ void WB()
 /************************************************************/
 void MEM()
 {
-	
     uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f;
     uint8_t flag = 0;
 	
-	
+	printf("In MEM, opCode = %x\n", opCode);
     //if the instruction in special
     if( opCode == 0 ){
         opCode = IF_EX.IR & 63;
@@ -549,6 +548,7 @@ void MEM()
 	//SW
 	if (opCode == 43){
 		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+		printf("In MEM, Storing at address %x\n", EX_MEM.ALUOutput);
 	}
 	//SB
 	if (opCode == 40){
@@ -654,10 +654,11 @@ void EX()
             if( flag == 0 ){
                 //LW
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                EX_MEM.B = IF_EX.B;
+                EX_MEM.A = IF_EX.B;
             } else { //SUBU
                 EX_MEM.ALUOutput = IF_EX.A - IF_EX.B;
             }
+	    break;
         case 24:
             //MULT
 			mulreg = IF_EX.A * IF_EX.B;
@@ -720,7 +721,7 @@ void EX()
             EX_MEM.ALUOutput = ~( IF_EX.A | IF_EX.B );
             break;
         case 42:
-            //SLT
+            //SLT            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
 			if( IF_EX.A < IF_EX.B ){
 				EX_MEM.ALUOutput = 1;
 			} else {
@@ -759,13 +760,15 @@ void EX()
             break;
         case 15:
             //LUI
-            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-			EX_MEM.B = IF_EX.B;
+            EX_MEM.ALUOutput = IF_EX.imm << 16;
+	    EX_MEM.A = IF_EX.A;
+	    EX_MEM.B = IF_EX.B;
 			break;
         case 43:    
             //SW
             EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-			EX_MEM.B = IF_EX.B;
+	    EX_MEM.B = IF_EX.B;
+		printf("IF_EX.A = %x, IF_EX.B = %x, IF_EX.imm = %x\n", IF_EX.A, IF_EX.B, IF_EX.imm);
 			break;
         case 40:
             //SB
@@ -837,7 +840,7 @@ void ID()
     IF_EX.B = CURRENT_STATE.REGS[ rt ];
     IF_EX.imm = ID_IF.IR;
 
-    if( (0x01 & ( ID_IF.IR >> 16 ) ) == 1 ){
+    if( (0x01 & ( ID_IF.IR >> 15 ) ) == 1 ){
         //need to sign extend negative
         IF_EX.imm = IF_EX.imm | 0xFFFF0000;
     } else {
@@ -852,7 +855,7 @@ void ID()
 void IF()
 {
     ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
-	NEXT_STATE.PC += 4;
+    NEXT_STATE.PC += 4;
 }
 
 
