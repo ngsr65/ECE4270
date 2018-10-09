@@ -331,13 +331,17 @@ void WB()
 	
 	//if the instruction in special
     if( opCode == 0 ){
-        opCode = IF_EX.IR & 63;
+        opCode = MEM_WB.IR & 63;
         flag = 1;
     }
     else if( opCode == 1 ){
-        opCode = ( IF_EX.IR >> 16 ) & 31;
+        opCode = ( MEM_WB.IR >> 16 ) & 31;
         flag = 2;
     }
+	
+	if (MEM_WB.IR == 0){
+		return;
+	}
 	
 	switch( opCode ){
         //ADD && LB
@@ -514,6 +518,8 @@ void WB()
             break;
     }
 	
+	
+	INSTRUCTION_COUNT++;
 }
 
 /************************************************************/
