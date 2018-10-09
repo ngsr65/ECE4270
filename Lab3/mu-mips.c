@@ -326,7 +326,194 @@ void handle_pipeline()
 /************************************************************/
 void WB()
 {
-    
+    uint32_t rt = (MEM_WB.IR & 0x001F0000) >> 16, rd = (MEM_WB.IR & 0x0000F800) >> 11;
+	uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f, flag = 0;
+	
+	//if the instruction in special
+    if( opCode == 0 ){
+        opCode = IF_EX.IR & 63;
+        flag = 1;
+    }
+    else if( opCode == 1 ){
+        opCode = ( IF_EX.IR >> 16 ) & 31;
+        flag = 2;
+    }
+	
+	switch( opCode ){
+        //ADD && LB
+        case 32:
+            if (flag == 0){ //LB
+                
+            } else {    //Add
+                NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+            break;
+        case 8:
+            //ADDI
+            if( flag == 0 ){
+                NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+            } else { //JR
+			
+            }
+            break;
+        case 9:     //JALR
+            if( flag == 1 ){
+				
+            } else { //ADDIU
+                NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+                
+            }
+            break;
+        case 33:
+            //LH
+            if( flag == 0 ){
+
+            } else { //ADDU
+                NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+            break;
+        case 34:
+            //SUB
+            NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 35:
+            if( flag == 0 ){
+                //LW
+                
+            } else { //SUBU
+                NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+        case 24:
+            //MULT
+            
+            break;
+        case 25: 
+            //multu
+            
+            break;
+        case 26:
+            //DIV
+           
+            break;
+        case 27:
+            
+            break;
+        case 36:
+            //AND
+            NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 12:
+            if( flag == 0 ){ //ANDI
+                NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+            } else { //SYSCALL
+
+            }
+            break;
+        case 37:
+            //OR
+            NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 13:
+            //ORI
+            NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+            break;
+        case 38:
+            //XOR
+            NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 14:
+            //XORI
+            NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+            break;
+        case 39:
+            //NOR
+            NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 42:
+            //SLT
+			NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 10: 
+            //SLTI
+            NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+			break;
+        case 0: 
+            if( flag == 2 ){ //BLTZ	
+
+            } else { //SLL
+				NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+            break;
+        case 2: 
+            if( flag == 0 ){ //J
+			
+            } else { //SRL
+				NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+            break;
+        case 3: 
+            if( flag == 0 ){ //JAL
+			
+            } else { //SRA
+				NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            }
+            break;
+        case 15:
+            //LUI
+            NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
+			break;
+        case 43:    
+            //SW
+            
+			break;
+        case 40:
+            //SB
+            
+			break;
+        case 41:
+            //SH
+            
+			break;
+        case 16:
+            //MFHI
+			NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 18:
+            //MFLO
+			NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+            break;
+        case 17: 
+            //MTHI
+			
+            break;
+        case 19:
+            //MTLO
+			
+            break;  
+        case 4:
+            //BEQ
+
+			break;
+        case 5:
+            //BNE
+
+            break;
+        case 6: 
+            //BLEZ
+
+			break;
+        case 1:
+            //BGEZ
+
+            break;
+        case 7:
+            //BGTZ
+
+            break;
+        default:
+            break;
+    }
+	
 }
 
 /************************************************************/
@@ -334,9 +521,11 @@ void WB()
 /************************************************************/
 void MEM()
 {
-    uint8_t opCode = ( IF_EX.IR >> 26 ) & 0x3f;
+	
+    uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f;
     uint8_t flag = 0;
-
+	
+	
     //if the instruction in special
     if( opCode == 0 ){
         opCode = IF_EX.IR & 63;
@@ -346,6 +535,9 @@ void MEM()
         opCode = ( IF_EX.IR >> 16 ) & 31;
         flag = 2;
     }
+	
+	MEM_WB.IR = EX_MEM.IR;
+	MEM_WB.ALUOutput = EX_MEM.ALUOutput;
 	
 	//Store
 	//SW
@@ -360,43 +552,21 @@ void MEM()
 	if (opCode == 41){
 		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
 	}
-	/*//MTLO		I think these belong in WB. They're classified as
-				  //Load/Store in Lab1, but it's register to register
-	if (opCode == 19){
-		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
-	}
-	//MTHI
-	if (opCode == 17){
-		mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
-	}
-	*/
 	
 	//Load
 	//LB
 	if (opCode == 32 && flag == 0){
-		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+		MEM_WB.LMD = 0x000000FF & mem_read_32(EX_MEM.ALUOutput);
 	}
 	//LH
 	if (opCode == 33 && flag == 0){
-		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+		MEM_WB.LMD = 0x0000FFFF & mem_read_32(EX_MEM.ALUOutput);
 	}
 	//LW
 	if (opCode == 35 && flag == 0){
 		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
 	}
-	//LUI
-	if (opCode == 15){
-		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
-	}
-	/*//MFLO
-	if (opCode == 18){
-		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
-	}
-	//MFHI
-	if (opCode == 16){
-		MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
-	}
-	*/
+
 }
 
 /************************************************************/
@@ -408,6 +578,7 @@ void EX()
 
     uint8_t opCode = ( IF_EX.IR >> 26 ) & 0x3f;
     uint8_t flag = 0;
+	uint64_t mulreg;
 
     //if the instruction in special
     if( opCode == 0 ){
@@ -428,7 +599,7 @@ void EX()
             if (flag == 0){ //LB
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 EX_MEM.B = IF_EX.B;
-            } else {    //Add   Works I think
+            } else {    //Add  
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.B;
                 if( checkOverflow( IF_EX.A, IF_EX.B ) == 1 ){
                     printf( "Overflow\n" );
@@ -443,12 +614,12 @@ void EX()
                     printf( "Overflow\n" );
                 }
             } else { //JR
-			EX_MEM.ALUOutput = IF_EX.IR >> 21;
+			
             }
             break;
         case 9:     //JALR
             if( flag == 1 ){
-				EX_MEM.ALUOutput = IF_EX.IR >> 21;
+				
             } else { //ADDIU
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 if( checkOverflow( IF_EX.A, IF_EX.imm ) == 1 ){
@@ -483,19 +654,23 @@ void EX()
             }
         case 24:
             //MULT
-            EX_MEM.ALUOutput = IF_EX.A * IF_EX.B;
-            //should high and lo regs be used? Yes
+			mulreg = IF_EX.A * IF_EX.B;
+            NEXT_STATE.HI = (0xFFFFFFFF00000000 & mulreg) >> 32;
+            NEXT_STATE.LO = (0x00000000FFFFFFFF & mulreg);
             break;
         case 25: 
             //multu
-            EX_MEM.ALUOutput = IF_EX.A * IF_EX.B;
+            mulreg = IF_EX.A * IF_EX.B;
+            NEXT_STATE.HI = (0xFFFFFFFF00000000 & mulreg) >> 32;
+            NEXT_STATE.LO = (0x00000000FFFFFFFF & mulreg);
             break;
         case 26:
             //DIV
             if( IF_EX.B == 0 ){
                 printf( "\nCannot Divide by Zero" );
             } else {
-                EX_MEM.ALUOutput = IF_EX.A / IF_EX.B;
+                NEXT_STATE.LO = IF_EX.A / IF_EX.B;
+				NEXT_STATE.HI = IF_EX.A % IF_EX.B;
             }
             break;
         case 27:
@@ -503,7 +678,8 @@ void EX()
             if( IF_EX.B == 0 ){
                  printf( "\nCannot Divide by Zero" );
             } else {
-                 EX_MEM.ALUOutput = IF_EX.A / IF_EX.B;
+                NEXT_STATE.LO = IF_EX.A / IF_EX.B;
+				NEXT_STATE.HI = IF_EX.A % IF_EX.B;
             }
             break;
         case 36:
@@ -514,7 +690,7 @@ void EX()
             if( flag == 0 ){ //ANDI
                 EX_MEM.ALUOutput = IF_EX.A & IF_EX.imm;
             } else { //SYSCALL
-
+				RUN_FLAG = FALSE;
             }
             break;
         case 37:
@@ -555,10 +731,7 @@ void EX()
 			
 			break;
         case 0: 
-            if( flag == 2 ){ //BLTZ
-				if( IF_EX.A < 0 ){
-                 EX_MEM.ALUOutput = IF_EX.imm;
-              }		
+            if( flag == 2 ){ //BLTZ	
 
             } else { //SLL
 				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
@@ -566,14 +739,14 @@ void EX()
             break;
         case 2: 
             if( flag == 0 ){ //J
-			EX_MEM.ALUOutput = IF_EX.IR & 0x03FFFFFF;
+			
             } else { //SRL
 				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
             }
             break;
         case 3: 
             if( flag == 0 ){ //JAL
-			EX_MEM.ALUOutput = IF_EX.IR & 0x03FFFFFF;
+			
             } else { //SRA
 				EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
             }
@@ -598,48 +771,41 @@ void EX()
             EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
 			EX_MEM.B = IF_EX.B;
 			break;
-      /*  case 16:
+        case 16:
             //MFHI
-			//EX_MEM.ALUOutput = 
+			EX_MEM.ALUOutput = CURRENT_STATE.HI;
             break;
         case 18:
             //MFLO
+			EX_MEM.ALUOutput = CURRENT_STATE.LO;
             break;
         case 17: 
             //MTHI
+			NEXT_STATE.HI = IF_EX.A;
             break;
         case 19:
             //MTLO
-            break;  */
+			NEXT_STATE.LO = IF_EX.A;
+            break;  
         case 4:
             //BEQ
-            if( IF_EX.A == IF_EX.B ){
-				EX_MEM.ALUOutput = IF_EX.imm;
-			}
+
 			break;
         case 5:
             //BNE
-			if( IF_EX.A != IF_EX.B ){
-                EX_MEM.ALUOutput = IF_EX.imm;
-             }
+
             break;
         case 6: 
             //BLEZ
-            if( IF_EX.A <= 0 ){
-                 EX_MEM.ALUOutput = IF_EX.imm;
-              }
+
 			break;
         case 1:
             //BGEZ
-			if( IF_EX.A >= 0 ){
-                 EX_MEM.ALUOutput = IF_EX.imm;
-              }
+
             break;
         case 7:
             //BGTZ
-			if( IF_EX.A > 0 ){
-                 EX_MEM.ALUOutput = IF_EX.imm;
-              }
+
             break;
         default:
             printf( "\nNot a Valid OpCode: %x", opCode );
@@ -672,7 +838,6 @@ void ID()
         //positive 
         IF_EX.imm = IF_EX.imm & 0x0000FFFF;
     }
-
 }
 
 /************************************************************/
@@ -681,8 +846,7 @@ void ID()
 void IF()
 {
     ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
-    ID_IF.PC += 4;
-
+	NEXT_STATE.PC += 4;
 }
 
 
