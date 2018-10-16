@@ -527,22 +527,24 @@ void WB()
 /************************************************************/
 void MEM()
 {
+
+    MEM_WB.IR = EX_MEM.IR;
+    MEM_WB.ALUOutput = EX_MEM.ALUOutput;
+
     uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f;
     uint8_t flag = 0;
 	
-	printf("In MEM, opCode = %x\n", opCode);
+    printf("In MEM, opCode = %x\n", opCode);
     //if the instruction in special
     if( opCode == 0 ){
-        opCode = IF_EX.IR & 63;
+        opCode = MEM_WB.IR & 63;
         flag = 1;
     }
     else if( opCode == 1 ){
-        opCode = ( IF_EX.IR >> 16 ) & 31;
+        opCode = ( MEM_WB.IR >> 16 ) & 31;
         flag = 2;
     }
 	
-	MEM_WB.IR = EX_MEM.IR;
-	MEM_WB.ALUOutput = EX_MEM.ALUOutput;
 	
 	//Store
 	//SW
@@ -582,7 +584,9 @@ void EX()
 {
     /*IMPLEMENT THIS*/
 
-    uint8_t opCode = ( IF_EX.IR >> 26 ) & 0x3f;
+    EX_MEM.IR = IF_EX.IR;
+
+    uint8_t opCode = ( EX_MEM.IR >> 26 ) & 0x3f;
     uint8_t flag = 0;
 	uint64_t mulreg;
 
@@ -595,9 +599,6 @@ void EX()
         opCode = ( IF_EX.IR >> 16 ) & 31;
         flag = 2;
     }
-
-    //Store the machine code again 
-    EX_MEM.IR = IF_EX.IR;
 
     switch( opCode ){
         //ADD && LB
