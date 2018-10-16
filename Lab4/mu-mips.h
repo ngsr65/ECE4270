@@ -38,6 +38,12 @@ mem_region_t MEM_REGIONS[] = {
 #define NUM_MEM_REGION 4
 #define MIPS_REGS 32
 
+//Pipeline flags, when set to one this pipeline should stall 
+uint8_t IF_stall = 0, ID_stall = 0, EX_stall = 0, MEM_stall = 0, WB_stall = 0;
+
+//Register Writing flags, if the flag is one rd will be used 
+uint8_t EX_MEM_regWrite = 0, MEM_WB_regWrite = 0;
+
 typedef struct CPU_State_Struct {
 
   uint32_t PC;		                   /* program counter */
