@@ -540,24 +540,31 @@ void WB()
 /************************************************************/
 void MEM()
 {
+
+    MEM_WB_regWrite = 1;
+
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
-        if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
-            && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
-            && ((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.A)
-            && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.A){
-                
+        if (MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
+            && !( 
+		 (EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
+            && ((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f))
+            && ((MEM_WB.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f)){
+
+                printf("MEM - ForwardA true\n");
                 ForwardA = 01; // IF FORWARDING CONDITIONS ARE TRUE
         } else {
+			printf("MEM - ForwardA false\n");
 			ForwardA = 00;
 	    }
         if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
             && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
-            && ((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)
-            && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.B){
-                
+            && ((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 16 ) & 0x1f))
+            && ((MEM_WB.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 16 ) & 0x1f)){
+                printf("MEM - ForwardB true\n");
                 ForwardB = 01; // IF FORWARDING CONDITIONS ARE TRUE
         } else {
+			printf("MEM - ForwardB false\n");
 			ForwardB = 00;
 		}
     }
@@ -603,19 +610,23 @@ void MEM()
             flag = 2;
         }
 
+	
 
         //Store
         //SW
         if (opCode == 43){
             mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+		MEM_WB_regWrite = 0;
             //printf("In MEM, Storing at address %x\n", EX_MEM.ALUOutput);
         }
         //SB
         if (opCode == 40){
             mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+		MEM_WB_regWrite = 0;
         }
         //SH
         if (opCode == 41){
+	MEM_WB_regWrite = 0;
             mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
         }
 
@@ -642,28 +653,29 @@ void EX()
 {
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
-        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.A)){
-            
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f))){
+            printf("EX - ForwardA true\n");
             ForwardA = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
         } else {
-			ForwardB = 00;
+			printf("EX - ForwardA false\n");
+			ForwardA = 00;
 		}
-        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)){
-           
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 16 ) & 0x1f))){
+           printf("EX - ForwardB true\n\n");
             ForwardB = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
         } else {
+			printf("EX - ForwardB false\n\n");
 			ForwardB = 00;
 		}
     }
 	
     //check the stall flag for this stage 
     if( !EX_stall ){
-
         /*----------------------------------------------------------
           Check for Data hazards and introduce the pipeline stall
-          ----------------------------------------------------------*/
+          ----------------------------------------------------------
         if( EX_MEM_regWrite                                      
             &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )          
             &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == IF_EX.A )){
@@ -679,6 +691,8 @@ void EX()
             IF_stall = 1;
             ID_stall = 1;
         }
+
+	*/
 
         EX_MEM.IR = IF_EX.IR;
 
@@ -927,6 +941,26 @@ void EX()
 /************************************************************/
 void ID()
 {
+
+	/*----------------------------------------------------------
+          Check for Data hazards and introduce the pipeline stall
+          ----------------------------------------------------------*/
+        if( EX_MEM_regWrite                                      
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )          
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == IF_EX.A )){
+            //if these conditions are met a data hazard has been encountered 
+            IF_stall = 1;
+            ID_stall = 1;
+        }
+
+        if( EX_MEM_regWrite
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == IF_EX.B )){
+            //If these conditions have been met a data hazard has been encountered 
+            IF_stall = 1;
+            ID_stall = 1;
+        }
+
     //Check the stall flag for this stage of the pipeline
     if( !ID_stall ){
 
@@ -950,9 +984,33 @@ void ID()
             IF_EX.imm = IF_EX.imm & 0x0000FFFF;
         }
 
+	if (ENABLE_FORWARDING == TRUE){
+		if (ForwardA == 10){
+			IF_EX.A = EX_MEM.ALUOutput;
+			
+		}
+		if (ForwardB == 10){
+			IF_EX.B = EX_MEM.ALUOutput;
+		}
+		if (ForwardA == 01){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				IF_EX.A = MEM_WB.LMD;
+			} else {
+				IF_EX.A = MEM_WB.ALUOutput;
+			}
+		}
+		if (ForwardB == 01){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				IF_EX.B = MEM_WB.LMD;
+			} else {
+				IF_EX.B = MEM_WB.ALUOutput;
+			}
+		}
+	}
+
     } else {
 		
-	}
+    }
 }
 
 /************************************************************/
@@ -1209,6 +1267,8 @@ void print_program(){
 void show_pipeline(){
     printf("Showing pipelines...\n");
 
+    printf("\nCurrent state of PC = %x\n\n", CURRENT_STATE.PC);
+
     printf("ID_IF.PC->%x\n", ID_IF.PC);
     printf("ID_IF.IR->%x\n", ID_IF.IR);
     printf("ID_IF.A->%x\n", ID_IF.A);
@@ -1239,7 +1299,8 @@ void show_pipeline(){
     printf("MEM_WB.B->%x\n", MEM_WB.B);
     printf("MEM_WB.IMM->%x\n", MEM_WB.imm);
     printf("MEM_WB.ALUOutput->%x\n", MEM_WB.ALUOutput);
-    printf("MEM_WB.LMD->%x\n\n", MEM_WB.LMD);
+    printf("MEM_WB.LMD->%x\n", MEM_WB.LMD);
+    printf("_________________________\n\n");
 }
 /**************************************************************
   Check Overflow
