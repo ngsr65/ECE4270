@@ -6,8 +6,6 @@
 
 #include "mu-mips.h"
 
-int ENABLE_FORWARDING = FALSE;
-
 /***************************************************************/
 /* Print out a list of commands available                                                                  */
 /***************************************************************/
@@ -532,7 +530,9 @@ void WB()
 
 
         INSTRUCTION_COUNT++;
-    }
+    } else {
+		
+	}
 }
 
 /************************************************************/
@@ -548,14 +548,18 @@ void MEM()
             && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.A){
                 
                 ForwardA = 01; // IF FORWARDING CONDITIONS ARE TRUE
-        }
+        } else {
+			ForwardA = 00;
+	    }
         if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
             && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
             && ((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)
             && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.B){
                 
                 ForwardB = 01; // IF FORWARDING CONDITIONS ARE TRUE
-        }
+        } else {
+			ForwardB = 00;
+		}
     }
     
     //Check for pipeline stall in the memory stage 
@@ -588,7 +592,7 @@ void MEM()
         uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f;
         uint8_t flag = 0;
 
-        printf("In MEM, opCode = %x\n", opCode);
+        //printf("In MEM, opCode = %x\n", opCode);
         //if the instruction in special
         if( opCode == 0 ){
             opCode = MEM_WB.IR & 63;
@@ -604,7 +608,7 @@ void MEM()
         //SW
         if (opCode == 43){
             mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
-            printf("In MEM, Storing at address %x\n", EX_MEM.ALUOutput);
+            //printf("In MEM, Storing at address %x\n", EX_MEM.ALUOutput);
         }
         //SB
         if (opCode == 40){
@@ -642,13 +646,18 @@ void EX()
             
             ForwardA = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
-        }
+        } else {
+			ForwardB = 00;
+		}
         if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)){
            
             ForwardB = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
-        }
+        } else {
+			ForwardB = 00;
+		}
     }
+	
     //check the stall flag for this stage 
     if( !EX_stall ){
 
@@ -908,7 +917,9 @@ void EX()
                 printf( "\nNot a Valid OpCode: %x", opCode );
                 break;
         }
-    }
+    } else {
+		
+	}
 }
 
 /************************************************************/
@@ -939,7 +950,9 @@ void ID()
             IF_EX.imm = IF_EX.imm & 0x0000FFFF;
         }
 
-    }
+    } else {
+		
+	}
 }
 
 /************************************************************/
@@ -952,7 +965,9 @@ void IF()
 
         ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
         NEXT_STATE.PC += 4;
-    }
+    } else {
+		
+	}
 }
 
 
