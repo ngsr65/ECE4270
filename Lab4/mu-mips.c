@@ -6,6 +6,8 @@
 
 #include "mu-mips.h"
 
+int ENABLE_FORWARDING = FALSE;
+
 /***************************************************************/
 /* Print out a list of commands available                                                                  */
 /***************************************************************/
@@ -22,6 +24,7 @@ void help() {
     printf("low <val>\t-- set the LO register to <val>\n");
     printf("print\t-- print the program loaded into memory\n");
     printf("show\t-- print the current content of the pipeline registers\n");
+    printf("forwarding\t-- set to 1 to enable forwarding\n");
     printf("?\t-- display help menu\n");
     printf("quit\t-- exit the simulator\n\n");
     printf("------------------------------------------------------------------\n\n");
@@ -231,6 +234,13 @@ void handle_command() {
         case 'P':
         case 'p':
             print_program(); 
+            break;
+        case 'F':
+        case 'f':
+            if(scanf("%d", &ENABLE_FORWARDING) != TRUE){
+                break;
+            }
+            ENABLE_FORWARDING == FALSE ? printf("Forwarding OFF\n") : printf("Forwarding ON\n");
             break;
         default:
             printf("Invalid Command.\n");
@@ -530,9 +540,29 @@ void WB()
 /************************************************************/
 void MEM()
 {
+    if(ENABLE_FORWARDING == TRUE){
+        //FORWARD DATA HERE
+        if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
+            && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
+            && ((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.A)
+            && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.A){
+                
+                ForwardA = 01; // IF FORWARDING CONDITIONS ARE TRUE
+        }
+        if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
+            && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
+            && ((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)
+            && ((MEM_WB.IR >> 11 ) & 0x1f) == IF_EX.B){
+                
+                ForwardB = 01; // IF FORWARDING CONDITIONS ARE TRUE
+        }
+    }
+    
     //Check for pipeline stall in the memory stage 
     if( !MEM_stall ){
 
+		MEM_WB.IR = EX_MEM.IR;
+		MEM_WB.PC = EX_MEM.PC;
         /*-------------------------------------------------------------
         Check for data hazards and introduce pipeline stall
         -------------------------------------------------------------*/
@@ -606,7 +636,19 @@ void MEM()
 /************************************************************/
 void EX()
 {
-    /*IMPLEMENT THIS*/
+    if(ENABLE_FORWARDING == TRUE){
+        //FORWARD DATA HERE
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.A)){
+            
+            ForwardA = 10; //IF FORWARDING CONDITIONS ARE TRUE
+
+        }
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == IF_EX.B)){
+           
+            ForwardB = 10; //IF FORWARDING CONDITIONS ARE TRUE
+
+        }
+    }
     //check the stall flag for this stage 
     if( !EX_stall ){
 
