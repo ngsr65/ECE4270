@@ -576,10 +576,10 @@ void MEM()
 		MEM_WB.PC = EX_MEM.PC;
         /*-------------------------------------------------------------
         Check for data hazards and introduce pipeline stall
-        -------------------------------------------------------------*/
+        -------------------------------------------------------------
         if( MEM_WB_regWrite 
             &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == IF_EX.A )){
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 21 ) & 0x1f) )){
             IF_stall = 1;
             ID_stall = 1;
             EX_stall = 1;
@@ -587,11 +587,11 @@ void MEM()
 
         if( MEM_WB_regWrite
             &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == IF_EX.B )){
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 16 ) & 0x1f))){
                 IF_stall = 1;
                 ID_stall = 1;
                 EX_stall = 1;
-            }
+            }*/
 
         MEM_WB.IR = EX_MEM.IR;
         MEM_WB.ALUOutput = EX_MEM.ALUOutput;
@@ -651,6 +651,11 @@ void MEM()
 /************************************************************/
 void EX()
 {
+
+    EX_MEM_regWrite = 1;
+	
+    
+
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
         if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x1f) != 0) && (((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f))){
@@ -879,17 +884,20 @@ void EX()
                 //SW
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 EX_MEM.B = IF_EX.B;
+		EX_MEM_regWrite = 0;
                 printf("IF_EX.A = %x, IF_EX.B = %x, IF_EX.imm = %x\n", IF_EX.A, IF_EX.B, IF_EX.imm);
                 break;
             case 40:
                 //SB
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 EX_MEM.B = IF_EX.B;
+	        EX_MEM_regWrite = 0;
                 break;
             case 41:
                 //SH
                 EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
                 EX_MEM.B = IF_EX.B;
+		EX_MEM_regWrite = 0;
                 break;
             case 16:
                 //MFHI
@@ -932,8 +940,8 @@ void EX()
                 break;
         }
     } else {
-		
-	}
+	EX_stall = 0;	
+    }
 }
 
 /************************************************************/
@@ -941,25 +949,6 @@ void EX()
 /************************************************************/
 void ID()
 {
-
-	/*----------------------------------------------------------
-          Check for Data hazards and introduce the pipeline stall
-          ----------------------------------------------------------*/
-        if( EX_MEM_regWrite                                      
-            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )          
-            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == IF_EX.A )){
-            //if these conditions are met a data hazard has been encountered 
-            IF_stall = 1;
-            ID_stall = 1;
-        }
-
-        if( EX_MEM_regWrite
-            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )
-            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == IF_EX.B )){
-            //If these conditions have been met a data hazard has been encountered 
-            IF_stall = 1;
-            ID_stall = 1;
-        }
 
     //Check the stall flag for this stage of the pipeline
     if( !ID_stall ){
@@ -1009,8 +998,48 @@ void ID()
 	}
 
     } else {
-		
+	ID_stall = 0;	
     }
+
+	/*----------------------------------------------------------
+          Check for Data hazards and introduce the pipeline stall
+          ----------------------------------------------------------*/
+        if( EX_MEM_regWrite                                      
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )          
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 21 ) & 0x1f) )){
+            //if these conditions are met a data hazard has been encountered 
+            IF_stall = 1;
+            ID_stall = 1;
+		printf("Stalling because of RD and RS\n");
+        }
+
+        if( EX_MEM_regWrite
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) != 0 )
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 16 ) & 0x1f) )){
+            //If these conditions have been met a data hazard has been encountered 
+            IF_stall = 1;
+            ID_stall = 1;
+		printf("Stalling because of RD and RT\n");
+        }
+
+	/*-------------------------------------------------------------
+        Check for data hazards and introduce pipeline stall
+        -------------------------------------------------------------*/
+        if( MEM_WB_regWrite 
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) != 0 )
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 21 ) & 0x1f) )){
+            IF_stall = 1;
+            ID_stall = 1;
+            EX_stall = 1;
+        }
+
+        if( MEM_WB_regWrite
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) != 0 )
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x1f ) == ((IF_EX.IR >> 16 ) & 0x1f))){
+                IF_stall = 1;
+                ID_stall = 1;
+                EX_stall = 1;
+            }
 }
 
 /************************************************************/
@@ -1024,8 +1053,8 @@ void IF()
         ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
         NEXT_STATE.PC += 4;
     } else {
-		
-	}
+	IF_stall = 0;
+    }
 }
 
 
@@ -1267,7 +1296,7 @@ void print_program(){
 void show_pipeline(){
     printf("Showing pipelines...\n");
 
-    printf("\nCurrent state of PC = %x\n\n", CURRENT_STATE.PC);
+    printf("\nCurrent state of PC = %x, EX_MEM_regWrite = %x, MEM_WB_regWrite = %x\n\n", CURRENT_STATE.PC, EX_MEM_regWrite, MEM_WB_regWrite);
 
     printf("ID_IF.PC->%x\n", ID_IF.PC);
     printf("ID_IF.IR->%x\n", ID_IF.IR);
