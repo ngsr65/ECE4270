@@ -921,7 +921,7 @@ void EX()
 /************************************************************/
 void ID()
 {
-		
+
 		
 
     //Check the stall flag for this stage of the pipeline
@@ -997,9 +997,10 @@ void ID()
 			printf("EX-based stalling because of new RD = prev RT\n");
         }
 		
+		
 		//For commands where rt is written to IE ADDIU
-		if (( EX_MEM.IR >> 26 ) & 0x0000003f == 9){
-			printf("Current command is ADDIU\n");
+		if ((( EX_MEM.IR >> 26 ) & 0x0000003f) == 9){
+			printf("ADDIU inside EX\n");
 			if( EX_MEM_regWrite                                      
 				&&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
 				&&  ( ( ( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 11 ) & 0x0000001f) )){
@@ -1010,7 +1011,8 @@ void ID()
 			
 			if( EX_MEM_regWrite                                      
 				&&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f)) && ( IF_EX.IR >> 26 ) & 0x0000003f == 9)){
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
+				printf("ADDIU inside EX and ID\n");
 				IF_stall = 1;
 				ID_stall = 1;
 				printf("ADDIU EX-based stalling because new RT = prev RT, both ADDIU\n");
