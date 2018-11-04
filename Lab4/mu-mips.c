@@ -661,11 +661,11 @@ void EX()
 		}
     }
 	
-	EX_MEM.IR = IF_EX.IR;
+	EX_MEM.IR = ID_EX.IR;
     //check the stall flag for this stage 
     if( !EX_stall ){
 
-		EX_MEM.PC = IF_EX.PC;
+		EX_MEM.PC = ID_EX.PC;
 		EX_MEM_regWrite = 1;
 		
         uint8_t opCode = ( EX_MEM.IR >> 26 ) & 0x3f;
@@ -674,11 +674,11 @@ void EX()
 
         //if the instruction in special
         if( opCode == 0 ){
-            opCode = IF_EX.IR & 63;
+            opCode = ID_EX.IR & 63;
             flag = 1;
         }
         else if( opCode == 1 ){
-            opCode = ( IF_EX.IR >> 16 ) & 31;
+            opCode = ( ID_EX.IR >> 16 ) & 31;
             flag = 2;
         }
 
@@ -686,12 +686,12 @@ void EX()
             //ADD && LB
             case 32:
                 if (flag == 0){ //LB
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                    EX_MEM.B = IF_EX.B;
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                    EX_MEM.B = ID_EX.B;
 					EX_MEM_regWrite = 0;
                 } else {    //Add  
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.B;
-                    if( checkOverflow( IF_EX.A, IF_EX.B ) == 1 ){
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.B;
+                    if( checkOverflow( ID_EX.A, ID_EX.B ) == 1 ){
                         printf( "Overflow\n" );
                     }
                 }
@@ -699,8 +699,8 @@ void EX()
             case 8:
                 //ADDI
                 if( flag == 0 ){
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                    if( checkOverflow( IF_EX.A, IF_EX.imm ) == 1 ){
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                    if( checkOverflow( ID_EX.A, ID_EX.imm ) == 1 ){
                         printf( "Overflow\n" );
                     }
                 } else { //JR
@@ -711,8 +711,8 @@ void EX()
                 if( flag == 1 ){
 
                 } else { //ADDIU
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                    if( checkOverflow( IF_EX.A, IF_EX.imm ) == 1 ){
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                    if( checkOverflow( ID_EX.A, ID_EX.imm ) == 1 ){
                         printf( "Overflow\n" );
                     }
                 }
@@ -720,96 +720,96 @@ void EX()
             case 33:
                 //LH
                 if( flag == 0 ){
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                    EX_MEM.B = IF_EX.B;
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                    EX_MEM.B = ID_EX.B;
 					EX_MEM_regWrite = 0;
 
                 } else { //ADDU
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.B;
-                    if( checkOverflow( IF_EX.A, IF_EX.B ) == 1 ){
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.B;
+                    if( checkOverflow( ID_EX.A, ID_EX.B ) == 1 ){
                         printf( "Overflow\n" );
                     }
                 }
                 break;
             case 34:
                 //SUB
-                EX_MEM.ALUOutput = IF_EX.A - IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A - ID_EX.B;
                 break;
             case 35:
                 if( flag == 0 ){
                     //LW
-                    EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                    EX_MEM.A = IF_EX.B;
+                    EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                    EX_MEM.A = ID_EX.B;
 					EX_MEM_regWrite = 0;
                 } else { //SUBU
-                    EX_MEM.ALUOutput = IF_EX.A - IF_EX.B;
+                    EX_MEM.ALUOutput = ID_EX.A - ID_EX.B;
                 }
                 break;
             case 24:
                 //MULT
-                mulreg = IF_EX.A * IF_EX.B;
+                mulreg = ID_EX.A * ID_EX.B;
                 NEXT_STATE.HI = (0xFFFFFFFF00000000 & mulreg) >> 32;
                 NEXT_STATE.LO = (0x00000000FFFFFFFF & mulreg);
 				EX_MEM_regWrite = 0;
                 break;
             case 25: 
                 //multu
-                mulreg = IF_EX.A * IF_EX.B;
+                mulreg = ID_EX.A * ID_EX.B;
                 NEXT_STATE.HI = (0xFFFFFFFF00000000 & mulreg) >> 32;
                 NEXT_STATE.LO = (0x00000000FFFFFFFF & mulreg);
                 break;
             case 26:
                 //DIV
-                if( IF_EX.B == 0 ){
+                if( ID_EX.B == 0 ){
                     printf( "\nCannot Divide by Zero" );
                 } else {
-                    NEXT_STATE.LO = IF_EX.A / IF_EX.B;
-                    NEXT_STATE.HI = IF_EX.A % IF_EX.B;
+                    NEXT_STATE.LO = ID_EX.A / ID_EX.B;
+                    NEXT_STATE.HI = ID_EX.A % ID_EX.B;
                 }
                 break;
             case 27:
                 //DIVU
-                if( IF_EX.B == 0 ){
+                if( ID_EX.B == 0 ){
                     printf( "\nCannot Divide by Zero" );
                 } else {
-                    NEXT_STATE.LO = IF_EX.A / IF_EX.B;
-                    NEXT_STATE.HI = IF_EX.A % IF_EX.B;
+                    NEXT_STATE.LO = ID_EX.A / ID_EX.B;
+                    NEXT_STATE.HI = ID_EX.A % ID_EX.B;
                 }
                 break;
             case 36:
                 //AND
-                EX_MEM.ALUOutput = IF_EX.A & IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A & ID_EX.B;
                 break;
             case 12:
                 if( flag == 0 ){ //ANDI
-                    EX_MEM.ALUOutput = IF_EX.A & IF_EX.imm;
+                    EX_MEM.ALUOutput = ID_EX.A & ID_EX.imm;
                 } else { //SYSCALL
                     RUN_FLAG = FALSE;
                 }
                 break;
             case 37:
                 //OR
-                EX_MEM.ALUOutput = IF_EX.A | IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A | ID_EX.B;
                 break;
             case 13:
                 //ORI
-                EX_MEM.ALUOutput = IF_EX.A | IF_EX.imm;
+                EX_MEM.ALUOutput = ID_EX.A | ID_EX.imm;
                 break;
             case 38:
                 //XOR
-                EX_MEM.ALUOutput = IF_EX.A ^ IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A ^ ID_EX.B;
                 break;
             case 14:
                 //XORI
-                EX_MEM.ALUOutput = IF_EX.A ^ IF_EX.imm;
+                EX_MEM.ALUOutput = ID_EX.A ^ ID_EX.imm;
                 break;
             case 39:
                 //NOR
-                EX_MEM.ALUOutput = ~( IF_EX.A | IF_EX.B );
+                EX_MEM.ALUOutput = ~( ID_EX.A | ID_EX.B );
                 break;
             case 42:
-                //SLT            EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                if( IF_EX.A < IF_EX.B ){
+                //SLT            EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                if( ID_EX.A < ID_EX.B ){
                     EX_MEM.ALUOutput = 1;
                 } else {
                     EX_MEM.ALUOutput = 0;
@@ -817,7 +817,7 @@ void EX()
                 break;
             case 10: 
                 //SLTI
-                if( IF_EX.A < IF_EX.imm ){
+                if( ID_EX.A < ID_EX.imm ){
                     EX_MEM.ALUOutput = 1;
                 } else {
                     EX_MEM.ALUOutput = 0;
@@ -828,45 +828,45 @@ void EX()
                 if( flag == 2 ){ //BLTZ	
 
                 } else { //SLL
-                    EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
                 break;
             case 2: 
                 if( flag == 0 ){ //J
 
                 } else { //SRL
-                    EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
                 break;
             case 3: 
                 if( flag == 0 ){ //JAL
 
                 } else { //SRA
-                    EX_MEM.ALUOutput = IF_EX.B >> ( ( IF_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
                 break;
             case 15:
                 //LUI
-                EX_MEM.ALUOutput = IF_EX.imm << 16;
-                EX_MEM.A = IF_EX.A;
-                EX_MEM.B = IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.imm << 16;
+                EX_MEM.A = ID_EX.A;
+                EX_MEM.B = ID_EX.B;
                 break;
             case 43:    
                 //SW
-                EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                EX_MEM.B = IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                EX_MEM.B = ID_EX.B;
 		EX_MEM_regWrite = 0;
                 break;
             case 40:
                 //SB
-                EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                EX_MEM.B = IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                EX_MEM.B = ID_EX.B;
 	        EX_MEM_regWrite = 0;
                 break;
             case 41:
                 //SH
-                EX_MEM.ALUOutput = IF_EX.A + IF_EX.imm;
-                EX_MEM.B = IF_EX.B;
+                EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
+                EX_MEM.B = ID_EX.B;
 		EX_MEM_regWrite = 0;
                 break;
             case 16:
@@ -879,11 +879,11 @@ void EX()
                 break;
             case 17: 
                 //MTHI
-                NEXT_STATE.HI = IF_EX.A;
+                NEXT_STATE.HI = ID_EX.A;
                 break;
             case 19:
                 //MTLO
-                NEXT_STATE.LO = IF_EX.A;
+                NEXT_STATE.LO = ID_EX.A;
                 break;  
             case 4:
                 //BEQ
@@ -934,39 +934,39 @@ void ID()
         rt = ( ID_IF.IR >> 16 ) & 0x1f;     //get the value of RT register 
         rd = ( ID_IF.IR >> 11 ) & 0x1f;     //get the value of RD register 
 
-        IF_EX.IR = ID_IF.IR;
-        IF_EX.A = CURRENT_STATE.REGS[ rs ];
-        IF_EX.B = CURRENT_STATE.REGS[ rt ];
-        IF_EX.imm = ID_IF.IR;
+        ID_EX.IR = ID_IF.IR;
+        ID_EX.A = CURRENT_STATE.REGS[ rs ];
+        ID_EX.B = CURRENT_STATE.REGS[ rt ];
+        ID_EX.imm = ID_IF.IR;
 
         if( (0x01 & ( ID_IF.IR >> 15 ) ) == 1 ){
             //need to sign extend negative
-            IF_EX.imm = IF_EX.imm | 0xFFFF0000;
+            ID_EX.imm = ID_EX.imm | 0xFFFF0000;
         } else {
             //positive 
-            IF_EX.imm = IF_EX.imm & 0x0000FFFF;
+            ID_EX.imm = ID_EX.imm & 0x0000FFFF;
         }
 
 	if (ENABLE_FORWARDING == TRUE){
 		if (ForwardA == 10){
-			IF_EX.A = EX_MEM.ALUOutput;
+			ID_EX.A = EX_MEM.ALUOutput;
 			
 		}
 		if (ForwardB == 10){
-			IF_EX.B = EX_MEM.ALUOutput;
+			ID_EX.B = EX_MEM.ALUOutput;
 		}
 		if (ForwardA == 01){
 			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				IF_EX.A = MEM_WB.LMD;
+				ID_EX.A = MEM_WB.LMD;
 			} else {
-				IF_EX.A = MEM_WB.ALUOutput;
+				ID_EX.A = MEM_WB.ALUOutput;
 			}
 		}
 		if (ForwardB == 01){
 			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				IF_EX.B = MEM_WB.LMD;
+				ID_EX.B = MEM_WB.LMD;
 			} else {
-				IF_EX.B = MEM_WB.ALUOutput;
+				ID_EX.B = MEM_WB.ALUOutput;
 			}
 		}
 	}
@@ -983,7 +983,7 @@ void ID()
 		//IF EX is a writing instruction AND rd is not r0 AND rd = rs, stall IF and ID
         if( EX_MEM_regWrite                                      
             &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
-            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f) )){
             IF_stall = 1;
             ID_stall = 1;
 			printf("EX-based stalling because new RD = prev RS\n");
@@ -992,7 +992,7 @@ void ID()
 		//IF EX is a writing instruction AND rd is not r0 AND rd = rt, stall IF and ID
         if( EX_MEM_regWrite
             && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )
-            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f) )){
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f) )){
             IF_stall = 1;
             ID_stall = 1;
 			printf("EX-based stalling because of new RD = prev RT\n");
@@ -1000,18 +1000,18 @@ void ID()
 		
 		
 		//For commands where rt is written to IE ADDIU
-		//EX_MEM is old command, IF_EX is new command
+		//EX_MEM is old command, ID_EX is new command
 		if ((( EX_MEM.IR >> 26 ) & 0x0000003f) == 9){	//If old command is ADDIU
 			//printf("ADDIU inside EX\n");
 			
 			//Debug
 			//printf("Old Command -> RD = R%d, RT = R%d, RS = R%d\n", ( EX_MEM.IR >> 11 ) & 0x0000001f, ( EX_MEM.IR >> 16 ) & 0x0000001f, ( EX_MEM.IR >> 21 ) & 0x0000001f);
-			//printf("New Command -> RD = R%d, RT = R%d, RS = R%d\n", (IF_EX.IR >> 11 ) & 0x0000001f, (IF_EX.IR >> 16 ) & 0x0000001f, (IF_EX.IR >> 21 ) & 0x0000001f);
+			//printf("New Command -> RD = R%d, RT = R%d, RS = R%d\n", (ID_EX.IR >> 11 ) & 0x0000001f, (ID_EX.IR >> 16 ) & 0x0000001f, (ID_EX.IR >> 21 ) & 0x0000001f);
 			//End Debug
 			
 			if( EX_MEM_regWrite        
 				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
 				IF_stall = 1;
 				ID_stall = 1;
 				printf("ADDIU stall because new RS = prev RT\n");
@@ -1019,15 +1019,15 @@ void ID()
 			
 			if( EX_MEM_regWrite        
 				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
 				IF_stall = 1;
 				ID_stall = 1;
 				printf("ADDIU stall because new RT = prev RT\n");
 			}
 			
 			if( EX_MEM_regWrite                                      
-				//&&  ( ( ( IF_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
+				//&&  ( ( ( ID_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
 				IF_stall = 1;
 				ID_stall = 1;
 				printf("ADDIU stall because new RS = prev RT, both ADDIU\n");
@@ -1040,7 +1040,7 @@ void ID()
 		//IF MEM is a writing instruction AND rd is not r0 AND rd = rs, stall IF, ID, and EX
         if( MEM_WB_regWrite 
             &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f) )){
             IF_stall = 1;
             ID_stall = 1;
             EX_stall = 1;
@@ -1050,7 +1050,7 @@ void ID()
 		//IF MEM is a writing instruction AND rd is not r0 AND rd = rt, stall IF, ID, and EX
         if( MEM_WB_regWrite
             &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f))){
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f))){
                 IF_stall = 1;
                 ID_stall = 1;
                 EX_stall = 1;
@@ -1325,13 +1325,13 @@ void show_pipeline(){
     printf("ID_IF.ALUOutput->%x\n", ID_IF.ALUOutput);
     printf("ID_IF.LMD->%x\n\n", ID_IF.LMD);
 
-    printf("IF_EX.PC->%x\n", IF_EX.PC);
-    printf("IF_EX.IR->%x\n", IF_EX.IR);
-    printf("IF_EX.A->%x\n", IF_EX.A);
-    printf("IF_EX.B->%x\n", IF_EX.B);
-    printf("IF_EX.IMM->%x\n", IF_EX.imm);
-    printf("IF_EX.ALUOutput->%x\n", IF_EX.ALUOutput);
-    printf("IF_EX.LMD->%x\n\n", IF_EX.LMD);
+    printf("ID_EX.PC->%x\n", ID_EX.PC);
+    printf("ID_EX.IR->%x\n", ID_EX.IR);
+    printf("ID_EX.A->%x\n", ID_EX.A);
+    printf("ID_EX.B->%x\n", ID_EX.B);
+    printf("ID_EX.IMM->%x\n", ID_EX.imm);
+    printf("ID_EX.ALUOutput->%x\n", ID_EX.ALUOutput);
+    printf("ID_EX.LMD->%x\n\n", ID_EX.LMD);
 
     printf("EX_MEM.PC->%x\n", EX_MEM.PC);
     printf("EX_MEM.IR->%x\n", EX_MEM.IR);
