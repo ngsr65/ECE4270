@@ -923,6 +923,60 @@ void ID()
 {
 
 		
+
+    //Check the stall flag for this stage of the pipeline
+    if (ID_stall == 0){
+
+        uint8_t opCode = 0x0, rs, rt, rd;
+
+        opCode = ( ID_IF.IR >> 26 ) & 0x3f;        //get bits 31-26 for the opCode
+        rs = ( ID_IF.IR >> 21 ) & 0x1f;     //get the value of RS register 
+        rt = ( ID_IF.IR >> 16 ) & 0x1f;     //get the value of RT register 
+        rd = ( ID_IF.IR >> 11 ) & 0x1f;     //get the value of RD register 
+
+        IF_EX.IR = ID_IF.IR;
+        IF_EX.A = CURRENT_STATE.REGS[ rs ];
+        IF_EX.B = CURRENT_STATE.REGS[ rt ];
+        IF_EX.imm = ID_IF.IR;
+
+        if( (0x01 & ( ID_IF.IR >> 15 ) ) == 1 ){
+            //need to sign extend negative
+            IF_EX.imm = IF_EX.imm | 0xFFFF0000;
+        } else {
+            //positive 
+            IF_EX.imm = IF_EX.imm & 0x0000FFFF;
+        }
+
+	if (ENABLE_FORWARDING == TRUE){
+		if (ForwardA == 10){
+			IF_EX.A = EX_MEM.ALUOutput;
+			
+		}
+		if (ForwardB == 10){
+			IF_EX.B = EX_MEM.ALUOutput;
+		}
+		if (ForwardA == 01){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				IF_EX.A = MEM_WB.LMD;
+			} else {
+				IF_EX.A = MEM_WB.ALUOutput;
+			}
+		}
+		if (ForwardB == 01){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				IF_EX.B = MEM_WB.LMD;
+			} else {
+				IF_EX.B = MEM_WB.ALUOutput;
+			}
+		}
+	}
+
+    } else {
+		printf("ID stall\n");
+		ID_stall = 0;
+		IF_stall = 1;
+	}
+	
 			/*----------------------------------------------------------
           Check for Data hazards and introduce the pipeline stall
           ----------------------------------------------------------*/
@@ -1001,61 +1055,7 @@ void ID()
                 ID_stall = 1;
                 EX_stall = 1;
 				printf("MEM-based stalling because of new RD = prev RT\n");
-        }		
-
-
-    //Check the stall flag for this stage of the pipeline
-    if (ID_stall == 0){
-
-        uint8_t opCode = 0x0, rs, rt, rd;
-
-        opCode = ( ID_IF.IR >> 26 ) & 0x3f;        //get bits 31-26 for the opCode
-        rs = ( ID_IF.IR >> 21 ) & 0x1f;     //get the value of RS register 
-        rt = ( ID_IF.IR >> 16 ) & 0x1f;     //get the value of RT register 
-        rd = ( ID_IF.IR >> 11 ) & 0x1f;     //get the value of RD register 
-
-        IF_EX.IR = ID_IF.IR;
-        IF_EX.A = CURRENT_STATE.REGS[ rs ];
-        IF_EX.B = CURRENT_STATE.REGS[ rt ];
-        IF_EX.imm = ID_IF.IR;
-
-        if( (0x01 & ( ID_IF.IR >> 15 ) ) == 1 ){
-            //need to sign extend negative
-            IF_EX.imm = IF_EX.imm | 0xFFFF0000;
-        } else {
-            //positive 
-            IF_EX.imm = IF_EX.imm & 0x0000FFFF;
         }
-
-	if (ENABLE_FORWARDING == TRUE){
-		if (ForwardA == 10){
-			IF_EX.A = EX_MEM.ALUOutput;
-			
-		}
-		if (ForwardB == 10){
-			IF_EX.B = EX_MEM.ALUOutput;
-		}
-		if (ForwardA == 01){
-			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				IF_EX.A = MEM_WB.LMD;
-			} else {
-				IF_EX.A = MEM_WB.ALUOutput;
-			}
-		}
-		if (ForwardB == 01){
-			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				IF_EX.B = MEM_WB.LMD;
-			} else {
-				IF_EX.B = MEM_WB.ALUOutput;
-			}
-		}
-	}
-
-    } else {
-		printf("ID stall\n");
-		ID_stall = 0;
-		IF_stall = 1;
-	}
 
 
 }
