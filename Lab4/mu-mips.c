@@ -923,6 +923,86 @@ void ID()
 {
 
 		
+			/*----------------------------------------------------------
+          Check for Data hazards and introduce the pipeline stall
+          ----------------------------------------------------------*/
+		//IF EX is a writing instruction AND rd is not r0 AND rd = rs, stall IF and ID
+        if( EX_MEM_regWrite                                      
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
+            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
+            IF_stall = 1;
+            ID_stall = 1;
+			printf("EX-based stalling because new RD = prev RS\n");
+        }
+
+		//IF EX is a writing instruction AND rd is not r0 AND rd = rt, stall IF and ID
+        if( EX_MEM_regWrite
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )
+            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f) )){
+            IF_stall = 1;
+            ID_stall = 1;
+			printf("EX-based stalling because of new RD = prev RT\n");
+        }
+		
+		
+		//For commands where rt is written to IE ADDIU
+		//EX_MEM is old command, IF_EX is new command
+		if ((( EX_MEM.IR >> 26 ) & 0x0000003f) == 9){	//If old command is ADDIU
+			//printf("ADDIU inside EX\n");
+			
+			//Debug
+			//printf("Old Command -> RD = R%d, RT = R%d, RS = R%d\n", ( EX_MEM.IR >> 11 ) & 0x0000001f, ( EX_MEM.IR >> 16 ) & 0x0000001f, ( EX_MEM.IR >> 21 ) & 0x0000001f);
+			//printf("New Command -> RD = R%d, RT = R%d, RS = R%d\n", (IF_EX.IR >> 11 ) & 0x0000001f, (IF_EX.IR >> 16 ) & 0x0000001f, (IF_EX.IR >> 21 ) & 0x0000001f);
+			//End Debug
+			
+			if( EX_MEM_regWrite        
+				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				IF_stall = 1;
+				ID_stall = 1;
+				printf("ADDIU stall because new RS = prev RT\n");
+			}
+			
+			if( EX_MEM_regWrite        
+				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				IF_stall = 1;
+				ID_stall = 1;
+				printf("ADDIU stall because new RT = prev RT\n");
+			}
+			
+			if( EX_MEM_regWrite                                      
+				//&&  ( ( ( IF_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
+				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
+				IF_stall = 1;
+				ID_stall = 1;
+				printf("ADDIU stall because new RS = prev RT, both ADDIU\n");
+			}
+		}
+
+	/*-------------------------------------------------------------
+        Check for data hazards and introduce pipeline stall
+        -------------------------------------------------------------*/
+		//IF MEM is a writing instruction AND rd is not r0 AND rd = rs, stall IF, ID, and EX
+        if( MEM_WB_regWrite 
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
+            IF_stall = 1;
+            ID_stall = 1;
+            EX_stall = 1;
+			printf("MEM-based stalling because of new RD = prev RS\n");
+        }
+
+		//IF MEM is a writing instruction AND rd is not r0 AND rd = rt, stall IF, ID, and EX
+        if( MEM_WB_regWrite
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
+            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f))){
+                IF_stall = 1;
+                ID_stall = 1;
+                EX_stall = 1;
+				printf("MEM-based stalling because of new RD = prev RT\n");
+        }		
+
 
     //Check the stall flag for this stage of the pipeline
     if (ID_stall == 0){
@@ -974,73 +1054,8 @@ void ID()
     } else {
 		printf("ID stall\n");
 		ID_stall = 0;
+		IF_stall = 1;
 	}
-	
-			/*----------------------------------------------------------
-          Check for Data hazards and introduce the pipeline stall
-          ----------------------------------------------------------*/
-		//IF EX is a writing instruction AND rd is not r0 AND rd = rs, stall IF and ID
-        if( EX_MEM_regWrite                                      
-            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
-            &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
-            IF_stall = 1;
-            ID_stall = 1;
-			printf("EX-based stalling because new RD = prev RS\n");
-        }
-
-		//IF EX is a writing instruction AND rd is not r0 AND rd = rt, stall IF and ID
-        if( EX_MEM_regWrite
-            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )
-            && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f) )){
-            IF_stall = 1;
-            ID_stall = 1;
-			printf("EX-based stalling because of new RD = prev RT\n");
-        }
-		
-		
-		//For commands where rt is written to IE ADDIU
-		if ((( EX_MEM.IR >> 26 ) & 0x0000003f) == 9){
-			printf("ADDIU inside EX\n");
-			if( EX_MEM_regWrite                                      
-				&&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
-				&&  ( ( ( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 11 ) & 0x0000001f) )){
-				IF_stall = 1;
-				ID_stall = 1;
-				printf("ADDIU EX-based stalling because new RT = prev RD\n");
-			}
-			
-			if( EX_MEM_regWrite                                      
-				&&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) != 0 )          
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f)) && ( (( IF_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
-				printf("ADDIU inside EX and ID\n");
-				IF_stall = 1;
-				ID_stall = 1;
-				printf("ADDIU EX-based stalling because new RT = prev RT, both ADDIU\n");
-			}
-		}
-
-	/*-------------------------------------------------------------
-        Check for data hazards and introduce pipeline stall
-        -------------------------------------------------------------*/
-		//IF MEM is a writing instruction AND rd is not r0 AND rd = rs, stall IF, ID, and EX
-        if( MEM_WB_regWrite 
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 21 ) & 0x0000001f) )){
-            IF_stall = 1;
-            ID_stall = 1;
-            EX_stall = 1;
-			printf("MEM-based stalling because of new RD = prev RS\n");
-        }
-
-		//IF MEM is a writing instruction AND rd is not r0 AND rd = rt, stall IF, ID, and EX
-        if( MEM_WB_regWrite
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) != 0 )
-            &&  ( ( ( MEM_WB.IR >> 11 ) & 0x0000001f ) == ((IF_EX.IR >> 16 ) & 0x0000001f))){
-                IF_stall = 1;
-                ID_stall = 1;
-                EX_stall = 1;
-				printf("MEM-based stalling because of new RD = prev RT\n");
-        }
 
 
 }
