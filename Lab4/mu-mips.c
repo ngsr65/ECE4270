@@ -6,6 +6,7 @@
 
 #include "mu-mips.h"
 
+
 /***************************************************************/
 /* Print out a list of commands available                                                                  */
 /***************************************************************/
@@ -85,7 +86,9 @@ void run(int num_cycles) {
     }
 
     printf("Running simulator for %d cycles...\n\n", num_cycles);
-    int i;
+	
+    int i, i2, i3;
+	
     for (i = 0; i < num_cycles; i++) {
         if (RUN_FLAG == FALSE) {
             printf("Simulation Stopped.\n\n");
@@ -93,6 +96,8 @@ void run(int num_cycles) {
         }
         cycle();
     }
+	
+	
 }
 
 /***************************************************************/
@@ -317,6 +322,8 @@ void load_program() {
     PROGRAM_SIZE = i/4;
     printf("Program loaded into memory.\n%d words written into memory.\n\n", PROGRAM_SIZE);
     fclose(fp);
+	
+
 }
 
 /************************************************************/
@@ -324,15 +331,17 @@ void load_program() {
 /************************************************************/
 void handle_pipeline()
 {
+	int i;
     /*INSTRUCTION_COUNT should be incremented when instruction is done*/
     /*Since we do not have branch/jump instructions, INSTRUCTION_COUNT should be incremented in WB stage */
 
-	printf("Cycle %d\n", CYCLE_COUNT);
+	//printf("Cycle %d\n", CYCLE_COUNT);
     WB();
     MEM();
     EX();
     ID();
     IF();
+	
 }
 
 /************************************************************/
@@ -340,11 +349,11 @@ void handle_pipeline()
 /************************************************************/
 void WB()
 {
-    if( !WB_stall ){
-
+	
+    if( !WB_stall && MEM_WB.IR != 0){
         uint32_t rt = (MEM_WB.IR & 0x001F0000) >> 16, rd = (MEM_WB.IR & 0x0000F800) >> 11;
         uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f, flag = 0;
-
+		
         //if the instruction in special
         if( opCode == 0 ){
             opCode = MEM_WB.IR & 63;
@@ -537,7 +546,7 @@ void WB()
 
         INSTRUCTION_COUNT++;
     } else {
-		printf("WB stall\n");
+		//printf("WB stall\n");
 	}
 }
 
@@ -546,6 +555,7 @@ void WB()
 /************************************************************/
 void MEM()
 {
+
 
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
@@ -574,8 +584,7 @@ void MEM()
     }
     
     //Check for pipeline stall in the memory stage 
-    if( !MEM_stall ){
-
+    if( !MEM_stall){
 		MEM_WB.IR = EX_MEM.IR;
 		MEM_WB.PC = EX_MEM.PC;
         MEM_WB.IR = EX_MEM.IR;
@@ -630,7 +639,7 @@ void MEM()
             MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
         }
     } else {
-		printf("MEM stall\n");
+		//printf("MEM stall\n");
 	}
 }
 
@@ -664,7 +673,6 @@ void EX()
 	EX_MEM.IR = ID_EX.IR;
     //check the stall flag for this stage 
     if( !EX_stall ){
-
 		EX_MEM.PC = ID_EX.PC;
 		EX_MEM_regWrite = 1;
 		
@@ -910,9 +918,9 @@ void EX()
                 break;
         }
     } else {
-		printf("EX stall\n");
+		//printf("EX stall\n");
+		EX_MEM.IR = 0;
 		EX_stall = 0;
-		//EX_MEM.IR = 0x0;
 	}
 }
 
@@ -922,11 +930,10 @@ void EX()
 void ID()
 {
 
-		
 
     //Check the stall flag for this stage of the pipeline
     if (ID_stall == 0){
-
+	
         uint8_t opCode = 0x0, rs, rt, rd;
 
         opCode = ( ID_IF.IR >> 26 ) & 0x3f;        //get bits 31-26 for the opCode
@@ -972,7 +979,7 @@ void ID()
 	}
 
     } else {
-		printf("ID stall\n");
+		//printf("ID stall\n");
 		ID_stall = 0;
 		IF_stall = 1;
 	}
@@ -986,7 +993,7 @@ void ID()
             &&  ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f) )){
             IF_stall = 1;
             ID_stall = 1;
-			printf("EX-based stalling because new RD = prev RS\n");
+			//printf("EX-based stalling because new RD = prev RS\n");
         }
 
 		//IF EX is a writing instruction AND rd is not r0 AND rd = rt, stall IF and ID
@@ -995,7 +1002,7 @@ void ID()
             && ( ( ( EX_MEM.IR >> 11 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f) )){
             IF_stall = 1;
             ID_stall = 1;
-			printf("EX-based stalling because of new RD = prev RT\n");
+			//printf("EX-based stalling because of new RD = prev RT\n");
         }
 		
 		
@@ -1014,7 +1021,7 @@ void ID()
 				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
 				IF_stall = 1;
 				ID_stall = 1;
-				printf("ADDIU stall because new RS = prev RT\n");
+				//printf("ADDIU stall because new RS = prev RT\n");
 			}
 			
 			if( EX_MEM_regWrite        
@@ -1022,7 +1029,7 @@ void ID()
 				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
 				IF_stall = 1;
 				ID_stall = 1;
-				printf("ADDIU stall because new RT = prev RT\n");
+				//printf("ADDIU stall because new RT = prev RT\n");
 			}
 			
 			if( EX_MEM_regWrite                                      
@@ -1030,7 +1037,7 @@ void ID()
 				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
 				IF_stall = 1;
 				ID_stall = 1;
-				printf("ADDIU stall because new RS = prev RT, both ADDIU\n");
+				//printf("ADDIU stall because new RS = prev RT, both ADDIU\n");
 			}
 		}
 
@@ -1044,7 +1051,7 @@ void ID()
             IF_stall = 1;
             ID_stall = 1;
             EX_stall = 1;
-			printf("MEM-based stalling because of new RD = prev RS\n");
+			//printf("MEM-based stalling because of new RD = prev RS\n");
         }
 
 		//IF MEM is a writing instruction AND rd is not r0 AND rd = rt, stall IF, ID, and EX
@@ -1054,9 +1061,43 @@ void ID()
                 IF_stall = 1;
                 ID_stall = 1;
                 EX_stall = 1;
-				printf("MEM-based stalling because of new RD = prev RT\n");
+				//printf("MEM-based stalling because of new RD = prev RT\n");
         }
+		
+		
+		//For commands where rt is written to IE ADDIU
+		//EX_MEM is old command, ID_EX is new command
+		if ((( MEM_WB.IR >> 26 ) & 0x0000003f) == 9){	//If old command is ADDIU
+			//printf("ADDIU inside MEM\n");
 
+			
+			if( MEM_WB_regWrite        
+				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
+				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				IF_stall = 1;
+				ID_stall = 1;
+				EX_stall = 1;
+				//printf("MEM-ADDIU stall because new RS = prev RT\n");
+			}
+			
+			if( MEM_WB_regWrite        
+				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
+				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != 9) )){	
+				IF_stall = 1;
+				ID_stall = 1;
+				EX_stall = 1;
+				//printf("MEM-ADDIU stall because new RT = prev RT\n");
+			}
+			
+			if( MEM_WB_regWrite                                      
+				//&&  ( ( ( ID_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
+				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) == 9) )  ){
+				IF_stall = 1;
+				ID_stall = 1;
+				EX_stall = 1;
+				//printf("MEM-ADDIU stall because new RS = prev RT, both ADDIU\n");
+			}
+		}
 
 }
 
@@ -1065,13 +1106,16 @@ void ID()
 /************************************************************/
 void IF()
 {
+	
+	
     //Check for stalling this pipeline stage 
     if( !IF_stall ){
 
         ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
         NEXT_STATE.PC += 4;
+		
     } else {
-		printf("IF stall\n\n");
+		//printf("IF stall\n\n");
 		IF_stall = 0;
 	}
 }
