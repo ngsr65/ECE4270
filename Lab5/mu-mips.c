@@ -647,7 +647,10 @@ void MEM()
 /************************************************************/
 void EX()
 {
-    
+	uint32_t target = 0; //target address we are jumping to if a branch or jump occurs    
+	uint8_t branch_taken = 0; //1 if the branch should be taken
+	uint8_t branch_encountered = 0;
+
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
         if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((EX_MEM.IR >> 21 ) & 0x0000001f))){
@@ -710,12 +713,17 @@ void EX()
                         printf( "Overflow\n" );
                     }
                 } else { //JR
-
+					branch_taken = 1;
+					target = ID_EX.A;
+					branch_encountered = 1;
                 }
                 break;
             case 9:     //JALR
                 if( flag == 1 ){
-
+					branch_taken = 1;
+					target = ID_EX.A;
+					branch_encountered = 1;
+					//add conditional
                 } else { //ADDIU
                     EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                     if( checkOverflow( ID_EX.A, ID_EX.imm ) == 1 ){
@@ -832,21 +840,29 @@ void EX()
                 break;
             case 0: 
                 if( flag == 2 ){ //BLTZ	
-
+					if( ID_EX.A < 0){
+						branch_taken = 1;
+						target = ID_EX.imm;
+						branch_encountered = 1;
+					}
                 } else { //SLL
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
                 break;
             case 2: 
                 if( flag == 0 ){ //J
-
+					branch_taken = 1;
+					target = ID_EX.IR & 0x03ffffff;
+					branch_encountered = 1;
                 } else { //SRL
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
                 break;
             case 3: 
                 if( flag == 0 ){ //JAL
-
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
                 } else { //SRA
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
                 }
@@ -893,23 +909,44 @@ void EX()
                 break;  
             case 4:
                 //BEQ
-
+				if(ID_EX.A == ID_EX.B){
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
+					//need to sign extend 
+				}
                 break;
             case 5:
                 //BNE
-
+				if( ID_EX.A != ID_EX.B){
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
+				}
                 break;
             case 6: 
                 //BLEZ
-
+				if( ID_EX.A <= 0){
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
+				}
                 break;
             case 1:
                 //BGEZ
-
+				if( ID_EX.A >= 0){
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
+				}
                 break;
             case 7:
                 //BGTZ
-
+				if( ID_EX.A > 0){
+					branch_taken = 1;
+					target = ID_EX.imm;
+					branch_encountered = 1;
+				}
                 break;
             default:
                 printf( "\nNot a Valid OpCode: %x", opCode );
@@ -920,6 +957,17 @@ void EX()
 //		EX_MEM.IR = 0;
 		EX_stall = 0;
 	}
+
+	/*---------------------------------------------------------
+	  Case I: branch should not be taken
+	  --------------------------------------------------------*/
+	if( branch_taken == 0 && branch_encountered == 1){
+		
+	}
+	else if( branch_taken == 1 && branch_encountered == 1){
+
+	}
+
 }
 
 /************************************************************/
@@ -956,7 +1004,7 @@ void ID()
 			EX_stall = 1;
 			ID_stall = 1;
 			IF_stall = 1;
-				}
+		}
 		
 		if (ForwardA == 10){
 			ID_EX.A = EX_MEM.ALUOutput;
@@ -1051,60 +1099,6 @@ if( ID_EX.IR != EX_MEM.IR ){
        		} 
 		
 		}
-/*
-		//For commands where rt is written to IE ADDIU
-		//EX_MEM is old command, ID_EX is new command
-		if ( opCode == 9  
-			 || opCode == 0x23
-			 || opCode == 0x08
-			 || opCode == 0x0f
-			 || opCode == 0x0d
-			 || opCode == 0x0a
-			 || opCode == 0x0e
-			 || opCode == 0x21
-			 || opCode == 0x20
-			 || opCode == 0x0c ){ // || (( EX_MEM.IR >> 26 ) & 0x0000003f) == 0x23){	//If old command is ADDIU
-			//printf("ADDIU inside EX\n");
-			
-			//Debug
-			//printf("Old Command -> RD = R%d, RT = R%d, RS = R%d\n", ( EX_MEM.IR >> 11 ) & 0x0000001f, ( EX_MEM.IR >> 16 ) & 0x0000001f, ( EX_MEM.IR >> 21 ) & 0x0000001f);
-			//printf("New Command -> RD = R%d, RT = R%d, RS = R%d\n", (ID_EX.IR >> 11 ) & 0x0000001f, (ID_EX.IR >> 16 ) & 0x0000001f, (ID_EX.IR >> 21 ) & 0x0000001f);
-			//End Debug
-			
-			if( EX_MEM_regWrite        
-				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != opCode) )){	
-				IF_stall = 1;
-				ID_stall = 1;
-				//printf("ADDIU stall because new RS = prev RT\n");
-			}
-			
-			if( EX_MEM_regWrite        
-				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != opCode) )){	
-				IF_stall = 1;
-				ID_stall = 1;
-				//printf("ADDIU stall because new RT = prev RT\n");
-			}
-			
-			if( EX_MEM_regWrite                                      
-				//&&  ( ( ( ID_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
-				&&  ( ((( EX_MEM.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) == opCode) )  ){
-				IF_stall = 1;
-				ID_stall = 1;
-				//printf("ADDIU stall because new RS = prev RT, both ADDIU\n");
-			}
-		} 
-*/
-
-/*------------------------------
-
-
-  R16 in the ADD instruction may be causeing an issue check this
-
-
-  -------------------------------------*/
-
 
 	switch( (MEM_WB.IR >> 26) & 0x0000003f ){
              case 0x23:
@@ -1175,50 +1169,44 @@ if( ID_EX.IR != EX_MEM.IR ){
          }
 
  }
-/*		
-		//For commands where rt is written to IE ADDIU
-		//EX_MEM is old command, ID_EX is new command
-		if ((( MEM_WB.IR >> 26 ) & 0x0000003f) == 9
-    	 		|| opCode == 0x23
-         	    || opCode == 0x08
-              	|| opCode == 0x0f
-              	|| opCode == 0x0d
-              	|| opCode == 0x0a
-              	|| opCode == 0x0e
-              	|| opCode == 0x21
-              	|| opCode == 0x20
-              	|| opCode == 0x0c  ){	//If old command is ADDIU
-			//printf("ADDIU inside MEM\n");
 
-			
-			if( MEM_WB_regWrite        
-				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != opCode) )){	
+	/*------------------------------------------------------
+	  Branch and Jump Instructions:
+	  	Check fot constrol instruction and stall the next IF if we have one
+	  ------------------------------------------------------*/	
+	switch( (ID_IF.IR >> 26) & 0x03f){
+		case 0x00:	//special case for JALR
+			if( (ID_IF.IR & 0x3f) == 0x09 ){
+				//JALR instruction
 				IF_stall = 1;
-				ID_stall = 1;
-				EX_stall = 1;
-				//printf("MEM-ADDIU stall because new RS = prev RT\n");
 			}
-			
-			if( MEM_WB_regWrite        
-				//&&  ( ( ( EX_MEM.IR >> 21 ) & 0x0000001f ) != 0 )        
-				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 16 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) != opCode) )){	
+			if( (ID_IF.IR & 0x3f) == 0x08 ){
+                 //JALR instruction
+            	IF_stall = 1; 
+			}
+			break;
+		case 0x02: //J
+		case 0x03: //JAL
+		case 0x04: //BEQ
+		case 0x05: //BNE
+		case 0x06: //BLEZ
+		case 0x07:
+			IF_stall = 1;
+			break;		
+		case 0x01:	//BLTZ special case 
+			if( ((ID_IF.IR >> 16) & 0x01f) == 0 ){
+				//we have a BLTZ instruction
 				IF_stall = 1;
-				ID_stall = 1;
-				EX_stall = 1;
-				//printf("MEM-ADDIU stall because new RT = prev RT\n");
 			}
-			
-			if( MEM_WB_regWrite                                      
-				//&&  ( ( ( ID_EX.IR >> 21 ) & 0x0000001f ) != 0 )           
-				&&  ( ((( MEM_WB.IR >> 16 ) & 0x0000001f ) == ((ID_EX.IR >> 21 ) & 0x0000001f)) && ( (( ID_EX.IR >> 26 ) & 0x0000003f) == opCode) )  ){
-				IF_stall = 1;
-				ID_stall = 1;
-				EX_stall = 1;
-				//printf("MEM-ADDIU stall because new RS = prev RT, both ADDIU\n");
+			else if( ((ID_IF.IR >> 16) & 0x01f) == 0x01 ){
+                 //we have a BGEZ instruction
+            	IF_stall = 1; 
 			}
-		}
-*/
+			break;
+		default:
+			//np stall
+			break;
+	}
 
 }
 
