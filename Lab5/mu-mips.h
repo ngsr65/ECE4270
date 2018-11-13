@@ -47,6 +47,8 @@ uint8_t EX_MEM_regWrite = 0, MEM_WB_regWrite = 0;
 //Forwarding flags and values
 int ENABLE_FORWARDING = FALSE, ForwardA, ForwardB;
 
+int SKIPID = 0;
+
 typedef struct CPU_State_Struct {
 
   uint32_t PC;		                   /* program counter */

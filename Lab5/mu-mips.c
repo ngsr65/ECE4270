@@ -69,7 +69,8 @@ void mem_write_32(uint32_t address, uint32_t value)
 /***************************************************************/
 /* Execute one cycle                                                                                                              */
 /***************************************************************/
-void cycle() {                                                
+void cycle() {         
+	printf("\nCycle %d\n\n", CYCLE_COUNT + 1);
     handle_pipeline();
     CURRENT_STATE = NEXT_STATE;
     CYCLE_COUNT++;
@@ -119,6 +120,7 @@ void runAll() {
         cycle();
     }
     printf("Simulation Finished.\n\n");
+	CURRENT_STATE.PC -= 8;
 }
 
 /***************************************************************/ 
@@ -323,6 +325,10 @@ void load_program() {
     printf("Program loaded into memory.\n%d words written into memory.\n\n", PROGRAM_SIZE);
     fclose(fp);
 	
+	//Turn on forwarding by default
+	ENABLE_FORWARDING = TRUE;
+	printf("Forwarding ON\n");
+	
 
 }
 
@@ -387,7 +393,11 @@ void WB()
                 break;
             case 9:     //JALR
                 if( flag == 1 ){
-
+					if (rd == 0){
+						NEXT_STATE.REGS[31] = MEM_WB.ALUOutput;
+					} else {
+						NEXT_STATE.REGS[rd] = MEM_WB.ALUOutput;
+					}
                 } else { //ADDIU
                     NEXT_STATE.REGS[rt] = MEM_WB.ALUOutput;
 
@@ -546,7 +556,7 @@ void WB()
 
         INSTRUCTION_COUNT++;
     } else {
-		//printf("WB stall\n");
+		printf("WB stall\n");
 	}
 }
 
@@ -567,7 +577,7 @@ void MEM()
                 printf("MEM - ForwardA true\n");
                 ForwardA = 01; // IF FORWARDING CONDITIONS ARE TRUE
         } else {
-			printf("MEM - ForwardA false\n");
+			//printf("MEM - ForwardA false\n");
 			ForwardA = 00;
 	    }
         if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
@@ -577,7 +587,7 @@ void MEM()
                 printf("MEM - ForwardB true\n");
                 ForwardB = 01; // IF FORWARDING CONDITIONS ARE TRUE
         } else {
-			printf("MEM - ForwardB false\n");
+			//printf("MEM - ForwardB false\n");
 			ForwardB = 00;
 		}
     }
@@ -586,7 +596,6 @@ void MEM()
     if( !MEM_stall){
 		MEM_WB.IR = EX_MEM.IR;
 		MEM_WB.PC = EX_MEM.PC;
-        MEM_WB.IR = EX_MEM.IR;
         MEM_WB.ALUOutput = EX_MEM.ALUOutput;
 		MEM_WB_regWrite = 1;
 
@@ -638,7 +647,7 @@ void MEM()
             MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
         }
     } else {
-		//printf("MEM stall\n");
+		printf("MEM stall\n");
 	}
 }
 
@@ -658,15 +667,15 @@ void EX()
             ForwardA = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
         } else {
-			printf("EX - ForwardA false\n");
+			//printf("EX - ForwardA false\n");
 			ForwardA = 00;
 		}
         if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((EX_MEM.IR >> 16 ) & 0x0000001f))){
-           printf("EX - ForwardB true\n\n");
+           printf("EX - ForwardB true\n");
             ForwardB = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
         } else {
-			printf("EX - ForwardB false\n\n");
+			//printf("EX - ForwardB false\n\n");
 			ForwardB = 00;
 		}
     }
@@ -721,9 +730,10 @@ void EX()
             case 9:     //JALR
                 if( flag == 1 ){
 					branch_taken = 1;
-					target = ID_EX.A;
 					branch_encountered = 1;
-					//add conditional
+					target = ((ID_EX.IR & 0x0000F800) >> 21);
+					
+					EX_MEM.ALUOutput = CURRENT_STATE.PC + 4;
                 } else { //ADDIU
                     EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                     if( checkOverflow( ID_EX.A, ID_EX.imm ) == 1 ){
@@ -842,7 +852,7 @@ void EX()
                 if( flag == 2 ){ //BLTZ	
 					if( ID_EX.A < 0){
 						branch_taken = 1;
-						target = ID_EX.imm;
+						target = CURRENT_STATE.PC + ID_EX.imm;
 						branch_encountered = 1;
 					}
                 } else { //SLL
@@ -861,7 +871,7 @@ void EX()
             case 3: 
                 if( flag == 0 ){ //JAL
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
                 } else { //SRA
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
@@ -911,7 +921,7 @@ void EX()
                 //BEQ
 				if(ID_EX.A == ID_EX.B){
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
 					//need to sign extend 
 				}
@@ -920,15 +930,16 @@ void EX()
                 //BNE
 				if( ID_EX.A != ID_EX.B){
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
 				}
                 break;
             case 6: 
                 //BLEZ
 				if( ID_EX.A <= 0){
+					printf("BLEZ taken\n");
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
 				}
                 break;
@@ -936,7 +947,7 @@ void EX()
                 //BGEZ
 				if( ID_EX.A >= 0){
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
 				}
                 break;
@@ -944,7 +955,7 @@ void EX()
                 //BGTZ
 				if( ID_EX.A > 0){
 					branch_taken = 1;
-					target = ID_EX.imm;
+					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
 				}
                 break;
@@ -953,19 +964,37 @@ void EX()
                 break;
         }
     } else {
-		//printf("EX stall\n");
-//		EX_MEM.IR = 0;
+		printf("EX stall\n");
 		EX_stall = 0;
 	}
 
 	/*---------------------------------------------------------
-	  Case I: branch should not be taken
+	  Case 1: branch should not be taken
 	  --------------------------------------------------------*/
 	if( branch_taken == 0 && branch_encountered == 1){
-		
+		//Do nothing, everything is good
+		branch_encountered = 0;
 	}
+	
+	/*---------------------------------------------------------
+	  Case 2: branch should be taken
+	  --------------------------------------------------------*/
 	else if( branch_taken == 1 && branch_encountered == 1){
-
+		//Change PC at end of cycle (Make sure IF doesn't run this cycle)
+		CURRENT_STATE.PC = target;
+		
+		//Stall ID			(IF gets stalled too)
+		//ID_stall = 1;
+		
+		
+		//Flush ID			
+		ID_EX.IR = 0;
+		
+		//Stall ID but not IF
+		SKIPID = 1;
+	
+		branch_encountered = 0;
+		branch_taken = 0;
 	}
 
 }
@@ -977,7 +1006,13 @@ void ID()
 {
 
     //Check the stall flag for this stage of the pipeline
-    if (ID_stall == 0){
+    if (ID_stall == 0){		
+	
+		if (SKIPID == 1){		//Do nothing if ID is flushed, but run the next IF()
+			printf("Skipping ID but running IF\n");
+			SKIPID = 0;
+			return;
+		}
 		
         uint8_t opCode = 0x0, rs, rt, rd;
 
@@ -1030,7 +1065,7 @@ void ID()
 	}
 
     } else {
-		//printf("ID stall\n");
+		printf("ID stall\n");
 		ID_stall = 0;
 		IF_stall = 1;
 	}
@@ -1038,7 +1073,7 @@ void ID()
 		uint32_t destReg = 0x00;
 		switch( (EX_MEM.IR >> 26) & 0x0000003f ){
 			case 0x23:
-				printf( "\nLW in EX_MEM stage" );
+				printf( "LW in EX_MEM stage\n" );
 			case 0x09:
 			case 0x08:
 			case 0x0f:
@@ -1049,7 +1084,7 @@ void ID()
 			case 0x20:
 			case 0x21:
 				destReg = ( EX_MEM.IR >> 16 ) & 0x00001f;
-				printf( "\nSpecial Case RT instead of RD" );
+				printf( "Special Case RT instead of RD\n" );
 				break;
 			case 40:
 			case 41:
@@ -1102,7 +1137,7 @@ if( ID_EX.IR != EX_MEM.IR ){
 
 	switch( (MEM_WB.IR >> 26) & 0x0000003f ){
              case 0x23:
-				 printf( "\nLW in MEM_WB" );
+				 printf( "LW in MEM_WB\n" );
              case 0x09:
              case 0x08:
              case 0x0f:
@@ -1113,7 +1148,7 @@ if( ID_EX.IR != EX_MEM.IR ){
              case 0x20:
              case 0x21:
                  destReg = ( MEM_WB.IR >> 16 ) & 0x00001f;
-             	printf( "\nSpecial Case RT instead of RD" );
+             	printf( "Special Case RT instead of RD\n" );
 				 break;
 			case 40:
             case 41:
@@ -1169,12 +1204,19 @@ if( ID_EX.IR != EX_MEM.IR ){
          }
 
  }
+ 
+ if( MEM_WB.IR == ID_EX.IR){	//Error, infinite loop
+	if (ID_EX.IR == ID_IF.IR){
+		ID_IF.IR = 0;
+		ID_EX.IR = 0;
+	}	
+ }
 
 	/*------------------------------------------------------
 	  Branch and Jump Instructions:
-	  	Check fot constrol instruction and stall the next IF if we have one
+	  	Check for constrol instruction and stall the next IF if we have one
 	  ------------------------------------------------------*/	
-	switch( (ID_IF.IR >> 26) & 0x03f){
+	/*switch( (ID_IF.IR >> 26) & 0x03f){
 		case 0x00:	//special case for JALR
 			if( (ID_IF.IR & 0x3f) == 0x09 ){
 				//JALR instruction
@@ -1207,7 +1249,9 @@ if( ID_EX.IR != EX_MEM.IR ){
 			//np stall
 			break;
 	}
-
+	
+	ID_IF.IR = 0;
+	*/
 }
 
 /************************************************************/
@@ -1222,7 +1266,7 @@ void IF()
         ID_IF.IR = mem_read_32( CURRENT_STATE.PC );
         NEXT_STATE.PC += 4;
     } else {
-		//printf("IF stall\n\n");
+		printf("IF stall\n");
 		IF_stall = 0;
 	}
 }
