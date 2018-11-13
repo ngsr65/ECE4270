@@ -252,6 +252,12 @@ void handle_command() {
             }
             ENABLE_FORWARDING == FALSE ? printf("Forwarding OFF\n") : printf("Forwarding ON\n");
             break;
+		case 'd':
+			run(1);
+			show_pipeline();
+			rdump();
+			mdump(0x10010000, 0x10010010);
+			break;
         default:
             printf("Invalid Command.\n");
             break;
@@ -356,7 +362,11 @@ void handle_pipeline()
 void WB()
 {
 
-    if( !WB_stall && MEM_WB.IR != 0){
+	if (MEM_WB.IR == 0){
+		return;
+	}
+
+    if( !WB_stall ){
         uint32_t rt = (MEM_WB.IR & 0x001F0000) >> 16, rd = (MEM_WB.IR & 0x0000F800) >> 11;
         uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f, flag = 0;
 		
@@ -565,32 +575,7 @@ void WB()
 /************************************************************/
 void MEM()
 {
-
-    if(ENABLE_FORWARDING == TRUE){
-        //FORWARD DATA HERE
-        if (MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
-            && !( 
-		 (EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
-            && ((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f))
-            && ((MEM_WB.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 21 ) & 0x1f)){
-
-                printf("MEM - ForwardA true\n");
-                ForwardA = 01; // IF FORWARDING CONDITIONS ARE TRUE
-        } else {
-			//printf("MEM - ForwardA false\n");
-			ForwardA = 00;
-	    }
-        if(MEM_WB_regWrite && (((MEM_WB.IR >> 11 ) & 0x1f) != 0)
-            && !((EX_MEM_regWrite && ((EX_MEM.IR >> 11 ) & 0x1f) != 0)
-            && ((EX_MEM.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 16 ) & 0x1f))
-            && ((MEM_WB.IR >> 11 ) & 0x1f) == ((EX_MEM.IR >> 16 ) & 0x1f)){
-                printf("MEM - ForwardB true\n");
-                ForwardB = 01; // IF FORWARDING CONDITIONS ARE TRUE
-        } else {
-			//printf("MEM - ForwardB false\n");
-			ForwardB = 00;
-		}
-    }
+	
     
     //Check for pipeline stall in the memory stage 
     if( !MEM_stall){
@@ -649,6 +634,61 @@ void MEM()
     } else {
 		printf("MEM stall\n");
 	}
+	
+	uint8_t MEMWBrs, MEMWBrt, MEMWBrd, EXMEMrs, EXMEMrt, EXMEMrd, IDEXrs, IDEXrt, IDEXrd;
+	MEMWBrs = ( MEM_WB.IR >> 21 ) & 0x1f;     //get the value of RS register 
+    MEMWBrt = ( MEM_WB.IR >> 16 ) & 0x1f;     //get the value of RT register 
+    MEMWBrd = ( MEM_WB.IR >> 11 ) & 0x1f;     //get the value of RD register
+	
+	EXMEMrs = ( EX_MEM.IR >> 21 ) & 0x1f;     //get the value of RS register 
+	EXMEMrt = ( EX_MEM.IR >> 16 ) & 0x1f;     //get the value of RT register 
+	EXMEMrd = ( EX_MEM.IR >> 11 ) & 0x1f;     //get the value of RT register 
+	
+	IDEXrs = ( ID_EX.IR >> 21 ) & 0x1f;     //get the value of RS register 
+	IDEXrt = ( ID_EX.IR >> 16 ) & 0x1f;     //get the value of RT register 
+	IDEXrd = ( ID_EX.IR >> 11 ) & 0x1f;     //get the value of RT register 
+
+	
+    if(ENABLE_FORWARDING == TRUE){
+        //FORWARD DATA HERE
+        if (MEM_WB_regWrite && (MEMWBrd != 0)
+            && !( 
+		 (EX_MEM_regWrite && (EXMEMrd != 0))
+            && (EXMEMrd == IDEXrs)			
+            && (MEMWBrd == IDEXrs))){		
+
+                printf("MEM - ForwardA true\n");
+				//Forwarding old's rd to new's rs
+				
+                ForwardA = 1; // IF FORWARDING CONDITIONS ARE TRUE
+        } else {
+			//printf("MEM - ForwardA false\n");
+			ForwardA = 0;
+	    }
+		
+		
+        if( MEM_WB_regWrite && (MEMWBrd != 0)
+            && !(EX_MEM_regWrite && (EXMEMrd != 0)
+            && (EXMEMrd == IDEXrt)
+            && (MEMWBrd == IDEXrt))){
+                printf("MEM - ForwardB true\n");
+                ForwardB = 1; // IF FORWARDING CONDITIONS ARE TRUE
+        } else {
+			//printf("MEM - ForwardB false\n");
+			ForwardB = 00;
+		}
+    }
+	
+	
+	 if ((EX_stall == 1) && (MEM_WB.IR == EX_MEM.IR)){
+	 //Flush EX to avoid repeats
+		EX_MEM.IR = 0;
+		EX_MEM.imm = 0;
+		EX_MEM.LMD = 0;
+		EX_MEM.B = 0;
+		EX_MEM.A = 0;
+	}
+ 
 }
 
 /************************************************************/
@@ -659,28 +699,29 @@ void EX()
 	uint32_t target = 0; //target address we are jumping to if a branch or jump occurs    
 	uint8_t branch_taken = 0; //1 if the branch should be taken
 	uint8_t branch_encountered = 0;
+	
+	EX_MEM.IR = ID_EX.IR;
+	EX_MEM.ALUOutput = ID_EX.ALUOutput;
+	
+	if (EX_MEM.IR == 0){
+		return;
+	}
 
     if(ENABLE_FORWARDING == TRUE){
         //FORWARD DATA HERE
-        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((EX_MEM.IR >> 21 ) & 0x0000001f))){
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((ID_EX.IR >> 21 ) & 0x0000001f))){
             printf("EX - ForwardA true\n");
             ForwardA = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
-        } else {
-			//printf("EX - ForwardA false\n");
-			ForwardA = 00;
-		}
-        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((EX_MEM.IR >> 16 ) & 0x0000001f))){
+        }
+        if(EX_MEM_regWrite && (((EX_MEM.IR >> 11 ) & 0x0000001f) != 0) && (((EX_MEM.IR >> 11 ) & 0x0000001f) == ((ID_EX.IR >> 16 ) & 0x0000001f))){
            printf("EX - ForwardB true\n");
             ForwardB = 10; //IF FORWARDING CONDITIONS ARE TRUE
 
-        } else {
-			//printf("EX - ForwardB false\n\n");
-			ForwardB = 00;
-		}
+        }
     }
 	
-	EX_MEM.IR = ID_EX.IR;
+	
     //check the stall flag for this stage 
     if( !EX_stall ){
 		EX_MEM.PC = ID_EX.PC;
@@ -856,7 +897,10 @@ void EX()
 						branch_encountered = 1;
 					}
                 } else { //SLL
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+					printf("Machine code is %x\n", ID_EX.IR);
+					printf("Shifting %x left by %d bits\n", ID_EX.B, ( ( ID_EX.IR >> 6 ) & 0x001f ));
+                    EX_MEM.ALUOutput = ID_EX.B << ( ( ID_EX.IR >> 6 ) & 0x0000001f );
+					printf("Answer is %x\n", EX_MEM.ALUOutput);
                 }
                 break;
             case 2: 
@@ -865,7 +909,10 @@ void EX()
 					target = ID_EX.IR & 0x03ffffff;
 					branch_encountered = 1;
                 } else { //SRL
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+					printf("Machine code is %x\n", ID_EX.IR);
+					printf("Shifting %x right by %d bits\n", ID_EX.B, ( ( ID_EX.IR >> 6 ) & 0x001f ));
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x0000001f );
+					printf("Answer is %x\n", EX_MEM.ALUOutput);
                 }
                 break;
             case 3: 
@@ -874,7 +921,7 @@ void EX()
 					target = CURRENT_STATE.PC + ID_EX.imm;
 					branch_encountered = 1;
                 } else { //SRA
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x0000001f );
                 }
                 break;
             case 15:
@@ -887,19 +934,19 @@ void EX()
                 //SW
                 EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                 EX_MEM.B = ID_EX.B;
-		EX_MEM_regWrite = 0;
+				EX_MEM_regWrite = 0;
                 break;
             case 40:
                 //SB
                 EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                 EX_MEM.B = ID_EX.B;
-	        EX_MEM_regWrite = 0;
+				EX_MEM_regWrite = 0;
                 break;
             case 41:
                 //SH
                 EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                 EX_MEM.B = ID_EX.B;
-		EX_MEM_regWrite = 0;
+				EX_MEM_regWrite = 0;
                 break;
             case 16:
                 //MFHI
@@ -989,6 +1036,10 @@ void EX()
 		
 		//Flush ID			
 		ID_EX.IR = 0;
+		ID_EX.imm = 0;
+		ID_EX.LMD = 0;
+		ID_EX.B = 0;
+		ID_EX.A = 0;
 		
 		//Stall ID but not IF
 		SKIPID = 1;
@@ -996,6 +1047,10 @@ void EX()
 		branch_encountered = 0;
 		branch_taken = 0;
 	}
+	
+	
+	
+	
 
 }
 
@@ -1004,6 +1059,7 @@ void EX()
 /************************************************************/
 void ID()
 {
+	    
 
     //Check the stall flag for this stage of the pipeline
     if (ID_stall == 0){		
@@ -1013,18 +1069,75 @@ void ID()
 			SKIPID = 0;
 			return;
 		}
+
+        ID_EX.IR = ID_IF.IR;
+        ID_EX.imm = ID_IF.IR;
 		
-        uint8_t opCode = 0x0, rs, rt, rd;
+		
+		uint8_t opCode = 0x0, rs, rt, rd;
 
         opCode = ( ID_IF.IR >> 26 ) & 0x3f;        //get bits 31-26 for the opCode
         rs = ( ID_IF.IR >> 21 ) & 0x1f;     //get the value of RS register 
         rt = ( ID_IF.IR >> 16 ) & 0x1f;     //get the value of RT register 
         rd = ( ID_IF.IR >> 11 ) & 0x1f;     //get the value of RD register 
-
-        ID_EX.IR = ID_IF.IR;
-        ID_EX.A = CURRENT_STATE.REGS[ rs ];
+		
+	if (ENABLE_FORWARDING == TRUE){
+		printf("ForwardA = %d, ForwardB = %d\n", ForwardA, ForwardB);
+		if( (( EX_MEM.IR >> 26) & 0x03f ) == 0x23){
+			EX_stall = 1;
+			ID_stall = 1;
+			IF_stall = 1;
+		}
+		
+		if (ForwardA == 0){
+			ID_EX.A = CURRENT_STATE.REGS[ rs ];
+		}
+		
+		if (ForwardB == 0){
+			ID_EX.B = CURRENT_STATE.REGS[ rt ];
+		}
+		
+		if (ForwardA == 10){
+			ID_EX.A = EX_MEM.ALUOutput;
+		}
+		
+		if (ForwardB == 10){
+			ID_EX.B = EX_MEM.ALUOutput;
+			printf("Testpoint 2 - EX_MEM.ALUOutput = %x\n", EX_MEM.ALUOutput);
+		} 
+		
+		if (ForwardA == 1){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				ID_EX.A = MEM_WB.LMD;
+			} else {
+				ID_EX.A = MEM_WB.ALUOutput;
+			}
+		}
+		
+		if (ForwardB == 1){
+			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
+				ID_EX.B = MEM_WB.LMD;
+			} else {
+				ID_EX.B = MEM_WB.ALUOutput;
+			}
+		}
+		
+		if ( (ForwardA != 0) ){
+			ForwardA = 0;
+		}
+		
+		if ( (ForwardB != 0) ){
+			ForwardB = 0;
+		}
+		
+	} else {
+		ID_EX.A = CURRENT_STATE.REGS[ rs ];
         ID_EX.B = CURRENT_STATE.REGS[ rt ];
-        ID_EX.imm = ID_IF.IR;
+	}
+		
+		
+		
+		
 
         if( (0x01 & ( ID_IF.IR >> 15 ) ) == 1 ){
             //need to sign extend negative
@@ -1034,40 +1147,16 @@ void ID()
             ID_EX.imm = ID_EX.imm & 0x0000FFFF;
         }
 
-	if (ENABLE_FORWARDING == TRUE){
-		if( (( EX_MEM.IR >> 26) & 0x03f ) == 0x23){
-			EX_stall = 1;
-			ID_stall = 1;
-			IF_stall = 1;
-		}
-		
-		if (ForwardA == 10){
-			ID_EX.A = EX_MEM.ALUOutput;
-			
-		}
-		if (ForwardB == 10){
-			ID_EX.B = EX_MEM.ALUOutput;
-		}
-		if (ForwardA == 01){
-			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				ID_EX.A = MEM_WB.LMD;
-			} else {
-				ID_EX.A = MEM_WB.ALUOutput;
-			}
-		}
-		if (ForwardB == 01){
-			if (opCode == 0x20 || opCode == 0x21 || opCode == 0x23){	//LB, LH, LW
-				ID_EX.B = MEM_WB.LMD;
-			} else {
-				ID_EX.B = MEM_WB.ALUOutput;
-			}
-		}
-	}
 
     } else {
 		printf("ID stall\n");
 		ID_stall = 0;
 		IF_stall = 1;
+
+	}
+	
+	if (EX_MEM.IR == ID_EX.IR){
+			EX_MEM.IR = 0;
 	}
 	
 		uint32_t destReg = 0x00;
@@ -1107,9 +1196,10 @@ void ID()
 
 
 
-		uint32_t opCode = ( EX_MEM.IR >> 26 ) & 0x0000003f;
+		uint8_t opCode = ( EX_MEM.IR >> 26 ) & 0x0000003f;
 
-if( ID_EX.IR != EX_MEM.IR ){
+//if (ENABLE_FORWARDING == FALSE){
+	if( ID_EX.IR != EX_MEM.IR ){
 		/*----------------------------------------------------------
          Check for Data hazards and introduce the pipeline stall
          ----------------------------------------------------------*/
@@ -1120,7 +1210,7 @@ if( ID_EX.IR != EX_MEM.IR ){
             IF_stall = 1;
             ID_stall = 1;
 	//		printf( "\nStalling EX_MEM destReg %d == ID_EX RS %d", destReg, ((ID_EX.IR >> 21 ) & 0x000001f ) );
-			//printf("EX-based stalling because new RD = prev RS\n");
+			printf("EX-based stalling because old's dest = new's RS\n");
         }
 
 		//IF EX is a writing instruction AND rd is not r0 AND rd = rt, stall IF and ID
@@ -1130,11 +1220,11 @@ if( ID_EX.IR != EX_MEM.IR ){
             IF_stall = 1;
             ID_stall = 1;
 	//		printf( "\nStalling EX_MEM destReg %d == ID_EX RT %d", destReg, ((ID_EX.IR >> 16 ) & 0x000001f ) );
-			//printf("EX-based stalling because of new RD = prev RT\n");
+			printf("EX-based stalling because old's dest = new's RT\n");
        		} 
 		
 		}
-
+//}
 	switch( (MEM_WB.IR >> 26) & 0x0000003f ){
              case 0x23:
 				 printf( "LW in MEM_WB\n" );
@@ -1171,11 +1261,13 @@ if( ID_EX.IR != EX_MEM.IR ){
 
 
 		opCode = ( MEM_WB.IR >> 26 ) & 0x0000003f;
+		
+//if (ENABLE_FORWARDING == FALSE){
 	/*-------------------------------------------------------------
         Check for data hazards and introduce pipeline stall
         -------------------------------------------------------------*/
 		//IF MEM is a writing instruction AND rd is not r0 AND rd = rs, stall IF, ID, and EX
- if( MEM_WB.IR != ID_EX.IR){
+	if( MEM_WB.IR != ID_EX.IR){
 		if( MEM_WB_regWrite 
             &&  ( destReg != 0 )
             &&  ( destReg  == ((ID_EX.IR >> 21 ) & 0x0000001f) )){
@@ -1183,7 +1275,7 @@ if( ID_EX.IR != EX_MEM.IR ){
             ID_stall = 1;
             EX_stall = 1;
 	//		printf( "\nStalling MEM_WB destReg %d == ID_EX RS %d", destReg, ((ID_EX.IR >> 21 ) & 0x000001f ) );
-			//printf("MEM-based stalling because of new RD = prev RS\n");
+			printf("MEM-based stalling because old's dest = new RS\n");
         }
 
 		//IF MEM is a writing instruction AND rd is not r0 AND rd = rt, stall IF, ID, and EX
@@ -1194,23 +1286,43 @@ if( ID_EX.IR != EX_MEM.IR ){
                 ID_stall = 1;
                 EX_stall = 1;
 	//			printf( "\nStalling MEM_WB destReg %d == ID_EX RS %d", destReg, ((ID_EX.IR >> 16 ) & 0x000001f ) );
-				//printf("MEM-based stalling because of new RD = prev RT\n");
+				printf("MEM-based stalling because old's dest = new RT\n");
         }
-
 
 		
 		if( opCode == 0x23 && ID_stall == 1 ){
              printf( "\nStalling for LW error here with MEM_WB and EX");
          }
-
- }
+	}
+ //}
  
- if( MEM_WB.IR == ID_EX.IR){	//Error, infinite loop
+ if( (MEM_WB.IR == ID_EX.IR) && (MEM_WB.IR != 0)){	//Error, infinite loop
 	if (ID_EX.IR == ID_IF.IR){
+		printf("Error, infinite loop. Flushing ID_IF...\n");
 		ID_IF.IR = 0;
-		ID_EX.IR = 0;
+		ID_IF.imm = 0;
+		ID_IF.LMD = 0;
+		ID_IF.B = 0;
+		ID_IF.A = 0;
+		
+		
+		//ID_EX.IR = 0;
+		//ID_EX.imm = 0;
+		//ID_EX.LMD = 0;
+		//ID_EX.B = 0;
+		//ID_EX.A = 0;
 	}	
  }
+ 
+ if ((IF_stall == 1) && (ID_EX.IR == ID_IF.IR)){
+	 //Flush ID to avoid repeats
+		ID_IF.IR = 0;
+		ID_IF.imm = 0;
+		ID_IF.LMD = 0;
+		ID_IF.B = 0;
+		ID_IF.A = 0;
+ }
+ 
 
 	/*------------------------------------------------------
 	  Branch and Jump Instructions:
