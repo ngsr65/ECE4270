@@ -699,6 +699,7 @@ void EX()
             flag = 2;
         }
 
+		printf( "\nEX OpCode is  %x", opCode );
         switch( opCode ){
             //ADD && LB
             case 32:
@@ -722,7 +723,7 @@ void EX()
                     }
                 } else { //JR
 					branch_taken = 1;
-					target = ID_EX.A;
+					target = 0x40000000 + ID_EX.A;
 					branch_encountered = 1;
                 }
                 break;
@@ -848,9 +849,9 @@ void EX()
                 break;
             case 0: 
                 if( flag == 2 ){ //BLTZ	
-					if( ID_EX.A < 0){
+					if( ID_EX.A > 0x80000000){
 						branch_taken = 1;
-						target = CURRENT_STATE.PC + ID_EX.imm;
+						target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 						branch_encountered = 1;
 					}
                 } else { //SLL
@@ -860,7 +861,7 @@ void EX()
             case 2: 
                 if( flag == 0 ){ //J
 					branch_taken = 1;
-					target = ID_EX.IR & 0x03ffffff;
+					target = (ID_EX.IR & 0x03ffffff) << 2;
 					branch_encountered = 1;
                 } else { //SRL
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x001f );
@@ -869,7 +870,7 @@ void EX()
             case 3: 
                 if( flag == 0 ){ //JAL
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
                 } else { //SRA
                     EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x001f );
@@ -917,43 +918,48 @@ void EX()
                 break;  
             case 4:
                 //BEQ
+				printf( "\nBEQ is EX checking for %x == %x", ID_EX.A, ID_EX.B );
 				if(ID_EX.A == ID_EX.B){
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
 					//need to sign extend 
 				}
                 break;
             case 5:
                 //BNE
+				printf( "\nBNE in EX checking for %x != %x", ID_EX.A, ID_EX.B );
 				if( ID_EX.A != ID_EX.B){
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
 				}
                 break;
             case 6: 
                 //BLEZ
-				if( ID_EX.A <= 0){
+				printf( "\nBLEZ in EX checking for %x <= 0", ID_EX.A );
+				if( ID_EX.A > 0x80000000 || ID_EX.A == 0){
 					printf("BLEZ taken\n");
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
 				}
                 break;
             case 1:
                 //BGEZ
-				if( ID_EX.A >= 0){
+				printf( "\nBGEZ in EX checking for %x >= 0", ID_EX.A );
+				if( ID_EX.A < 0x80000000 && ID_EX.A >= 0){
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
 				}
                 break;
             case 7:
                 //BGTZ
-				if( ID_EX.A > 0){
+				printf( "\nBGTZ in EX checking for %x > 0", ID_EX.A );
+				if( ID_EX.A < 0x80000000 && ID_EX.A > 0){
 					branch_taken = 1;
-					target = CURRENT_STATE.PC + ID_EX.imm;
+					target = CURRENT_STATE.PC + (ID_EX.imm << 2);
 					branch_encountered = 1;
 				}
                 break;
@@ -980,6 +986,7 @@ void EX()
 	  --------------------------------------------------------*/
 	else if( branch_taken == 1 && branch_encountered == 1){
 		//Change PC at end of cycle (Make sure IF doesn't run this cycle)
+		printf( "\nBranch Taken PC %x -> %x", CURRENT_STATE.PC, target );
 		CURRENT_STATE.PC = target;
 		NEXT_STATE.PC = target;
 		
