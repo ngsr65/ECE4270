@@ -250,6 +250,12 @@ void handle_command() {
             }
             ENABLE_FORWARDING == FALSE ? printf("Forwarding OFF\n") : printf("Forwarding ON\n");
             break;
+		case 'd':
+			run(1);
+			show_pipeline();
+			rdump();
+			mdump(0x10010000, 0x10010010);
+		break;
         default:
             printf("Invalid Command.\n");
             break;
@@ -834,21 +840,21 @@ void EX()
                 if( flag == 2 ){ //BLTZ	
 
                 } else { //SLL
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B << ( ( ID_EX.IR >> 6 ) & 0x001f );
                 }
                 break;
             case 2: 
                 if( flag == 0 ){ //J
 
                 } else { //SRL
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x001f );
                 }
                 break;
             case 3: 
                 if( flag == 0 ){ //JAL
 
                 } else { //SRA
-                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 5 ) & 0x001f );
+                    EX_MEM.ALUOutput = ID_EX.B >> ( ( ID_EX.IR >> 6 ) & 0x001f );
                 }
                 break;
             case 15:
@@ -867,13 +873,13 @@ void EX()
                 //SB
                 EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                 EX_MEM.B = ID_EX.B;
-	        EX_MEM_regWrite = 0;
+				EX_MEM_regWrite = 0;
                 break;
             case 41:
                 //SH
                 EX_MEM.ALUOutput = ID_EX.A + ID_EX.imm;
                 EX_MEM.B = ID_EX.B;
-		EX_MEM_regWrite = 0;
+				EX_MEM_regWrite = 0;
                 break;
             case 16:
                 //MFHI
