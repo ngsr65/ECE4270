@@ -47,6 +47,10 @@ uint8_t EX_MEM_regWrite = 0, MEM_WB_regWrite = 0;
 //Forwarding flags and values
 int ENABLE_FORWARDING = FALSE, ForwardA, ForwardB;
 
+//Cache flag
+uint8_t CacheStall = 0;
+uint8_t UseCache = 0;
+
 int SKIPID = 0;
 
 typedef struct CPU_State_Struct {
@@ -103,6 +107,8 @@ void rdump();
 void handle_command();
 void reset();
 void init_memory();
+void cacheWrite(uint32_t, uint32_t);
+uint32_t cacheRead(uint32_t);
 void load_program();
 void handle_pipeline(); /*IMPLEMENT THIS*/
 void WB();/*IMPLEMENT THIS*/

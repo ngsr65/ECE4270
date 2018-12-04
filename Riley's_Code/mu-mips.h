@@ -40,27 +40,45 @@ mem_region_t MEM_REGIONS[] = {
 
 typedef struct CPU_State_Struct {
 
-  uint32_t PC;		                   /* program counter */
+  uint32_t PC;		          /* program counter */
   uint32_t REGS[MIPS_REGS]; /* register file. */
-  uint32_t HI, LO;                          /* special regs for mult/div. */
+  uint32_t HI, LO;          /* special regs for mult/div. */
 } CPU_State;
 
+typedef struct CPU_Pipeline_Reg_Struct{
+	uint32_t PC;
+	uint32_t IR;
+	uint32_t A;
+	uint32_t B;
+	uint32_t imm;
+	uint32_t ALUOutput;
+	uint32_t LMD;
 
+} CPU_Pipeline_Reg;
 
 /***************************************************************/
-/* CPU State info.                                                                                                               */
+/* CPU State info.                                             */
 /***************************************************************/
 
 CPU_State CURRENT_STATE, NEXT_STATE;
 int RUN_FLAG;	/* run flag*/
 uint32_t INSTRUCTION_COUNT;
+uint32_t CYCLE_COUNT;
 uint32_t PROGRAM_SIZE; /*in words*/
-
-char prog_file[32];
 
 
 /***************************************************************/
-/* Function Declerations.                                                                                                */
+/* Pipeline Registers.                                         */
+/***************************************************************/
+CPU_Pipeline_Reg ID_IF;
+CPU_Pipeline_Reg IF_EX;
+CPU_Pipeline_Reg EX_MEM;
+CPU_Pipeline_Reg MEM_WB;
+
+char prog_file[32];
+
+/***************************************************************/
+/* Function Declerations.                                      */
 /***************************************************************/
 void help();
 uint32_t mem_read_32(uint32_t address);
@@ -74,9 +92,8 @@ void handle_command();
 void reset();
 void init_memory();
 void load_program();
-void handle_instruction(); /*IMPLEMENT THIS*/
+void handle_pipeline(); /*IMPLEMENT THIS*/
+void show_pipeline();/*IMPLEMENT THIS*/
 void initialize();
 void print_program(); /*IMPLEMENT THIS*/
-void print_instruction(uint32_t);
-int checkOverflow(uint32_t, uint32_t);
-
+int checkOverflow(uint32_t num1, uint32_t num2);

@@ -24,6 +24,7 @@ void help() {
     printf("print\t-- print the program loaded into memory\n");
     printf("show\t-- print the current content of the pipeline registers\n");
     printf("forwarding\t-- set to 1 to enable forwarding\n");
+	printf("cache\t-- set to 1 to enable caching\n");
     printf("?\t-- display help menu\n");
     printf("quit\t-- exit the simulator\n\n");
     printf("------------------------------------------------------------------\n\n");
@@ -88,15 +89,27 @@ void run(int num_cycles) {
 
     printf("Running simulator for %d cycles...\n\n", num_cycles);
 	
-    int i, i2, i3;
+    int i, i2;
 	
     for (i = 0; i < num_cycles; i++) {
+		
         if (RUN_FLAG == FALSE) {
             printf("Simulation Stopped.\n\n");
             break;
         }
-        cycle();
-    }
+		
+		if (CacheStall == 1 && UseCache == 1){
+			for (i2 = 0; i2 < 100; i2++){
+				CYCLE_COUNT++;
+			}
+			cache_misses++;
+			CacheStall = 0;
+			cycle();
+		} else {
+			cycle();
+		}
+		
+	}
 	
 	
 }
@@ -109,6 +122,8 @@ void runAll() {
         printf("Simulation Stopped.\n\n");
         return;
     }
+	
+	int i2;
 
     printf("Simulation Started...\n\n");
 	WB_stall = 0;
@@ -117,7 +132,16 @@ void runAll() {
 	ID_stall = 0;
 	IF_stall = 0;
     while (RUN_FLAG){
-        cycle();
+        if (CacheStall == 1 && UseCache == 1){
+			for (i2 = 0; i2 < 100; i2++){
+				CYCLE_COUNT++;
+			}
+			cache_misses++;
+			CacheStall = 0;
+			cycle();
+		} else {
+			cycle();
+		}
     }
     printf("Simulation Finished.\n\n");
 	CURRENT_STATE.PC -= 8;
@@ -252,6 +276,13 @@ void handle_command() {
             }
             ENABLE_FORWARDING == FALSE ? printf("Forwarding OFF\n") : printf("Forwarding ON\n");
             break;
+		case 'C':
+        case 'c':
+            if(scanf("%d", &UseCache) != TRUE){
+                break;
+            }
+            UseCache == FALSE ? printf("Caching OFF\n") : printf("Caching ON\n");
+            break;
 		case 'd':
 			run(1);
 			show_pipeline();
@@ -310,6 +341,9 @@ void load_program() {
     FILE * fp;
     int i, word;
     uint32_t address;
+	
+	cache_misses = 0;
+	cache_hits = 0;
 
     /* Open program file. */
     fp = fopen(prog_file, "r");
@@ -330,10 +364,6 @@ void load_program() {
     PROGRAM_SIZE = i/4;
     printf("Program loaded into memory.\n%d words written into memory.\n\n", PROGRAM_SIZE);
     fclose(fp);
-	
-	//Turn on forwarding by default
-	ENABLE_FORWARDING = TRUE;
-	printf("Forwarding ON\n");
 	
 
 }
@@ -1686,6 +1716,17 @@ int checkOverflow(uint32_t num1, uint32_t num2){
         return 0;
     }
 }
+
+void cacheWrite(uint32_t address, uint32_t data){
+	
+}
+
+uint32_t cacheRead(uint32_t address){
+
+	return;
+}
+
+
 /***************************************************************/
 /* main                                                                                                                                   */
 /***************************************************************/
