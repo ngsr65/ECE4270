@@ -5,6 +5,7 @@
 #include <assert.h>
 
 #include "mu-mips.h"
+#include "mu-cache.h"
 
 
 /***************************************************************/
@@ -102,8 +103,8 @@ void run(int num_cycles) {
 			for (i2 = 0; i2 < 100; i2++){
 				CYCLE_COUNT++;
 			}
-			cache_misses++;
 			CacheStall = 0;
+			cache_misses++;
 			cycle();
 		} else {
 			cycle();
@@ -111,6 +112,7 @@ void run(int num_cycles) {
 		
 	}
 	
+	printf("Cache hits: %d\t Cache misses: %d\n", cache_hits, cache_misses);
 	
 }
 
@@ -136,14 +138,15 @@ void runAll() {
 			for (i2 = 0; i2 < 100; i2++){
 				CYCLE_COUNT++;
 			}
-			cache_misses++;
 			CacheStall = 0;
+			cache_misses++;
 			cycle();
 		} else {
 			cycle();
 		}
     }
     printf("Simulation Finished.\n\n");
+	printf("Cache hits: %d\t Cache misses: %d\n", cache_hits, cache_misses);
 	CURRENT_STATE.PC -= 8;
 }
 
@@ -342,8 +345,6 @@ void load_program() {
     int i, word;
     uint32_t address;
 	
-	cache_misses = 0;
-	cache_hits = 0;
 
     /* Open program file. */
     fp = fopen(prog_file, "r");
@@ -352,6 +353,15 @@ void load_program() {
         exit(-1);
     }
 
+	//Clear the cache
+	cache_misses = 0;
+	cache_hits = 0;
+	
+	for (i = 0; i < 16; i++){
+		L1Cache.blocks[i].valid == 0;
+	}
+	
+	
     /* Read in the program. */
 
     i = 0;
@@ -633,33 +643,56 @@ void MEM()
         //Store
         //SW
         if (opCode == 43){
-            mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
-		MEM_WB_regWrite = 0;
-            //printf("In MEM, Storing at address %x\n", EX_MEM.ALUOutput);
+			if (UseCache == 1){
+				cacheWrite(EX_MEM.ALUOutput, EX_MEM.B);
+			} else {
+				mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+			}
+			MEM_WB_regWrite = 0;
         }
         //SB
         if (opCode == 40){
-            mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
-		MEM_WB_regWrite = 0;
+			if (UseCache == 1){
+				cacheWrite(EX_MEM.ALUOutput, EX_MEM.B);
+			} else {
+				mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+			}
+			MEM_WB_regWrite = 0;
         }
         //SH
         if (opCode == 41){
-		MEM_WB_regWrite = 0;
-            mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+			if (UseCache == 1){
+				cacheWrite(EX_MEM.ALUOutput, EX_MEM.B);
+			} else {
+				mem_write_32(EX_MEM.ALUOutput, EX_MEM.B);
+			}
+			MEM_WB_regWrite = 0;
         }
 
         //Load
         //LB
         if (opCode == 32 && flag == 0){
-            MEM_WB.LMD = 0x000000FF & mem_read_32(EX_MEM.ALUOutput);
+			if (UseCache == 1){
+				MEM_WB.LMD = 0x000000FF & cacheRead(EX_MEM.ALUOutput);
+			} else {
+				MEM_WB.LMD = 0x000000FF & mem_read_32(EX_MEM.ALUOutput);
+			}
         }
         //LH
         if (opCode == 33 && flag == 0){
-            MEM_WB.LMD = 0x0000FFFF & mem_read_32(EX_MEM.ALUOutput);
+			if (UseCache == 1){
+				MEM_WB.LMD = 0x0000FFFF & cacheRead(EX_MEM.ALUOutput);
+			} else {
+				MEM_WB.LMD = 0x0000FFFF & mem_read_32(EX_MEM.ALUOutput);
+			}
         }
         //LW
         if (opCode == 35 && flag == 0){
-            MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+			if (UseCache == 1){
+				MEM_WB.LMD = cacheRead(EX_MEM.ALUOutput);
+			} else {
+				MEM_WB.LMD = mem_read_32(EX_MEM.ALUOutput);
+			}
         }
     } else {
 		printf("MEM stall\n");
@@ -1719,11 +1752,82 @@ int checkOverflow(uint32_t num1, uint32_t num2){
 
 void cacheWrite(uint32_t address, uint32_t data){
 	
+	//Don't need byte offset
+	//uint32_t byteOffset = (address & 0x00000003);
+	
+	uint32_t wordOffset = (address & 0x0000000C) >> 2;
+    uint32_t index = (address & 0x000000F0) >> 4;
+    uint32_t tag = (address & 0xFFFFFF00) >> 8;
+	uint32_t currentData;
+	
+	uint8_t opCode = ( MEM_WB.IR >> 26 ) & 0x3f;
+	
+	//If the block's tag is different or it isn't valid, load in the correct data from memory
+	if(L1Cache.blocks[index].tag != tag || L1Cache.blocks[index].valid == 0){
+        L1Cache.blocks[index].tag = tag;
+        L1Cache.blocks[index].words[0] = mem_read_32(address & 0xFFFFFFF0);
+        L1Cache.blocks[index].words[1] = mem_read_32(address & 0xFFFFFFF4);
+        L1Cache.blocks[index].words[2] = mem_read_32(address & 0xFFFFFFF8);
+        L1Cache.blocks[index].words[3] = mem_read_32(address & 0xFFFFFFFC);
+        L1Cache.blocks[index].valid = 1;
+		CacheStall = 1;
+		printf("Cache miss\n");
+    }else{
+        cache_hits++;
+		printf("Cache hit\n");
+    }
+	
+	//Add the new value to the cache
+	currentData = L1Cache.blocks[index].words[wordOffset];
+	switch (opCode){
+		//Store byte
+		case 0x28:	
+			L1Cache.blocks[index].words[wordOffset] = ((currentData & 0xFFFFFF00) | (data & 0x000000FF));
+			break;
+		//Store half word	
+		case 0x29:	
+			L1Cache.blocks[index].words[wordOffset] = ((currentData & 0xFFFF0000) | (data & 0x0000FFFF));
+			break;
+		//Store word	
+		case 0x2B:	
+			L1Cache.blocks[index].words[wordOffset] = data;
+			break;
+	}
+	
+	//Write the cache block to memory
+	mem_write_32((address & 0xFFFFFFF0), L1Cache.blocks[index].words[0]);
+    mem_write_32((address & 0xFFFFFFF4), L1Cache.blocks[index].words[1]);
+    mem_write_32((address & 0xFFFFFFF8), L1Cache.blocks[index].words[2]);
+    mem_write_32((address & 0xFFFFFFFC), L1Cache.blocks[index].words[3]);
+	
+	
 }
 
 uint32_t cacheRead(uint32_t address){
 
-	return;
+	//Returning a word, so don't need byte offset
+	//uint32_t byteOffset = (address & 0x00000003);
+	
+	uint32_t wordOffset = (address & 0x0000000C) >> 2;
+    uint32_t index = (address & 0x000000F0) >> 4;
+    uint32_t tag = (address & 0xFFFFFF00) >> 8;
+	
+	//If the block's tag is different or it isn't valid, load in the correct data and stall
+	if(L1Cache.blocks[index].tag != tag || L1Cache.blocks[index].valid == 0){
+        L1Cache.blocks[index].tag = tag;
+        L1Cache.blocks[index].words[0] = mem_read_32(address & 0xFFFFFFF0);
+        L1Cache.blocks[index].words[1] = mem_read_32(address & 0xFFFFFFF4);
+        L1Cache.blocks[index].words[2] = mem_read_32(address & 0xFFFFFFF8);
+        L1Cache.blocks[index].words[3] = mem_read_32(address & 0xFFFFFFFC);
+        L1Cache.blocks[index].valid = 1;
+		CacheStall = 1;
+		printf("Cache miss\n");
+    }else{
+        cache_hits++;
+		printf("Cache hit\n");
+    }
+    
+    return L1Cache.blocks[index].words[wordOffset];
 }
 
 
